@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>文学フリマ東京41 マップ＆チェッカー</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⏲%3C/text%3E%3C/svg%3E" type="image/svg+xml">
+    <style>
+        :root {
+            --orange-theme: #f39c12;
+            --blue-theme: #3498db;
+            --pink-highlight: #ff69b4;
+            --green-visited: #2ecc71;
+            --gray-base: #ecf0f1;
+            --dark-text: #2c3e50;
+            --bg-orange: #fff5e6;
+            --bg-blue: #e6f7ff;
+        }
+        body {
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #timer-area {
+            background: #333;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #555;
+            height: 10px;
+            border-radius: 5px;
+            margin-top: 5px;
+            overflow: hidden;
+            display: none;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: var(--green-visited);
+            width: 0%;
+            transition: width 0.5s;
+        }
+        .timer-text {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        #floor-tabs {
+            display: flex;
+            width: 100%;
+            height: 50px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 90;
+        }
+        .tab {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .tab-orange {
+            background-color: #eee;
+            border-bottom: 4px solid transparent;
+            color: #555;
+        }
+        .tab-orange.active {
+            background-color: var(--bg-orange);
+            border-bottom: 4px solid var(--orange-theme);
+            color: var(--orange-theme);
+        }
+        .tab-blue {
+            background-color: #eee;
+            border-bottom: 4px solid transparent;
+            color: #555;
+        }
+        .tab-blue.active {
+            background-color: var(--bg-blue);
+            border-bottom: 4px solid var(--blue-theme);
+            color: var(--blue-theme);
+        }
+        #map-container {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+        }
+        .map-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 2000px;
+            height: 2000px;
+            transform-origin: 0 0;
+            display: none;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .map-layer.active {
+            display: block;
+        }
+        .island-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .row-label {
+            width: 30px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            text-align: center;
+            margin-right: 5px;
+            padding: 5px 0;
+        }
+        .booths-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+        }
+        .booth {
+            width: 24px;
+            height: 24px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            font-size: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .booth[data-status="1"] {
+            background-color: var(--pink-highlight);
+            color: white;
+            border-color: var(--pink-highlight);
+        }
+        .booth[data-status="2"] {
+            background-color: var(--green-visited);
+            color: white;
+            border-color: var(--green-visited);
+        }
+        .trial-area {
+            width: 200px;
+            height: 60px;
+            background-color: #ffcccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            border: 2px solid #ff6666;
+            margin: 5px 0;
+        }
+        .controls {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+        .fab {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            border: none;
+        }
+        #info-footer {
+            height: 60px;
+            background: white;
+            border-top: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+        .legend {
+            display: flex;
+            gap: 10px;
+            font-size: 0.8rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        #share-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 90%;
+        }
+        #tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            pointer-events: none;
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+<div id="timer-area">
+    <div id="timer-display" class="timer-text">Loading...</div>
+    <div class="progress-container" id="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+</div>
+<div id="floor-tabs">
+    <div class="tab tab-orange active" onclick="window.switchTab('1F')">
+        南1・2 (A-X)
+    </div>
+    <div class="tab tab-blue" onclick="window.switchTab('4F')">
+        南3・4 (あ-ぬ)
+    </div>
+</div>
+<div id="map-container">
+    <div id="map-1f" class="map-layer active" style="background: var(--bg-orange);">
+        <div id="grid-1f"></div>
+    </div>
+    <div id="map-4f" class="map-layer" style="background: var(--bg-blue);">
+        <div id="grid-4f"></div>
+    </div>
+    <div id="tooltip"></div>
+    <div class="controls">
+        <button class="fab" onclick="window.zoomIn()">+</button>
+        <button class="fab" onclick="window.zoomOut()">-</button>
+        <button class="fab" onclick="window.openShareModal()">🔗</button>
+    </div>
+</div>
+<div id="info-footer">
+    <div id="booth-info-display">タップして選択</div>
+    <div class="legend">
+        <div class="legend-item"><div class="dot" style="background:var(--pink-highlight)"></div>行きたい</div>
+        <div class="legend-item"><div class="dot" style="background:var(--green-visited)"></div>訪問済</div>
+    </div>
+</div>
+<div id="share-modal" onclick="if(event.target === this) window.closeShareModal()">
+    <div class="modal-content">
+        <h3>現在の状態を共有</h3>
+        <div id="qrcode"></div>
+        <p>このURLを共有してください：</p>
+        <input type="text" id="share-url" readonly>
+        <div style="margin-top:15px;">
+            <button onclick="window.copyUrl()">URLをコピー</button>
+            <button onclick="window.closeShareModal()">閉じる</button>
+        </div>
+    </div>
+</div>
+<script>
+/* ================= CONFIGURATION ================= */
+const EVENT_DATE = "2025-11-23";
+const OPEN_TIME = "12:00";
+const CLOSE_TIME = "17:00";
+const ROW_CONFIG_1F = [
+    { label: 'A', blocks: ['38~27', '26~19', '18~11', '10~01', '39~50', '51~58', '59~66', '67~76'] },
+    { label: 'B', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'C', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'D', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'E', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'F', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'G', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'H', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'I', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'J', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'K', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'L', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'M', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'N', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'O', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'P', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'Q', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'R', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'S', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'T', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'U', blocks: ['24~13', '12~01'] },
+];
+const ROW_CONFIG_4F = [
+    { label: 'あ', blocks: ['36~25', '24~19', '18~11', '10~01', '37~48', '49~54', '55~62', '63~72'] },
+    { label: 'い', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'う', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'え', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'お', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'か', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'き', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'く', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'け', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'こ', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'さ', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'し', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'す', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'せ', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'そ', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'た', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'ち', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'つ', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'て', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'と', blocks: ['46~35', '34~23', '22~11', '10~01', '47~58', '59~70', '71~82', '83~92'] },
+    { label: 'な', blocks: ['24~13', '12~01'] },
+];
+let boothState = {};
+let currentZoom = 1.0;
+let isDragging = false;
+let startX, startY, initialLeft, initialTop;
+let currentTranslate = { x: 0, y: 0 };
+/* ================= INITIALIZATION ================= */
+window.onload = function() {
+    loadStateFromUrl();
+    const saved = localStorage.getItem('bunfuri_map_data');
+    if (saved) boothState = JSON.parse(saved);
+    generateMap('grid-1f', ROW_CONFIG_1F);
+    generateMap('grid-4f', ROW_CONFIG_4F);
+    applyStateToDom();
+    startTimer();
+    setupDrag();
+};
+/* ================= MAP GENERATION ================= */
+function generateMap(containerId, config) {
+    const container = document.getElementById(containerId);
+    config.forEach(row => {
+        createRow(container, row.label, row.blocks);
+    });
+    // 試し読みコーナーを追加
+    const trialArea = document.createElement('div');
+    trialArea.className = 'trial-area';
+    trialArea.textContent = '試し読みコーナー';
+    container.appendChild(trialArea);
+}
+function createRow(parent, label, blocks) {
+    const row = document.createElement('div');
+    row.className = 'island-row';
+
+    // ラベルを追加
+    const labelDiv = document.createElement('div');
+    labelDiv.className = 'row-label';
+    labelDiv.textContent = label;
+    row.appendChild(labelDiv);
+
+    const boothsDiv = document.createElement('div');
+    boothsDiv.className = 'booths-container';
+
+    blocks.forEach(block => {
+        const [start, end] = block.split('~').map(Number);
+        const isReverse = start > end;
+        const count = Math.abs(start - end) + 1;
+        for (let i = 0; i < count; i++) {
+            const num = isReverse ? start - i : start + i;
+            const id = `${label}-${num.toString().padStart(2, '0')}`;
+            const cell = document.createElement('div');
+            cell.className = 'booth';
+            cell.id = `booth-${id}`;
+            cell.textContent = num;
+            cell.dataset.id = id;
+            cell.dataset.status = "0";
+            cell.addEventListener('click', () => toggleBooth(id));
+            if (window.innerWidth >= 768) {
+                cell.addEventListener('mouseenter', (e) => showTooltip(e, id));
+                cell.addEventListener('mouseleave', hideTooltip);
+            }
+            boothsDiv.appendChild(cell);
+        }
+    });
+
+    // boothsDivをrowに追加
+    row.appendChild(boothsDiv);
+    parent.appendChild(row);
+}
+
+/* ================= LOGIC ================= */
+function toggleBooth(id) {
+    const current = boothState[id] || 0;
+    const next = (current + 1) % 3;
+    if (next === 0) delete boothState[id];
+    else boothState[id] = next;
+    updateBoothVisually(id, next);
+    saveData();
+    updateInfoDisplay(id, next);
+}
+function updateBoothVisually(id, status) {
+    const el = document.getElementById(`booth-${id}`);
+    if (el) el.dataset.status = status;
+}
+function applyStateToDom() {
+    for (const [id, status] of Object.entries(boothState)) {
+        updateBoothVisually(id, status);
+    }
+}
+function saveData() {
+    localStorage.setItem('bunfuri_map_data', JSON.stringify(boothState));
+}
+function updateInfoDisplay(id, status) {
+    const text = status === 0 ? "未指定" : (status === 1 ? "行きたい！" : "訪問済み");
+    document.getElementById('booth-info-display').innerText = `ブース: ${id} [${text}]`;
+}
+/* ================= TIMER ================= */
+function startTimer() {
+    const timerEl = document.getElementById('timer-display');
+    const barEl = document.getElementById('progress-bar');
+    const barContainer = document.getElementById('progress-container');
+    function update() {
+        const now = new Date();
+        const dateStr = EVENT_DATE;
+        const start = new Date(`${dateStr}T${OPEN_TIME}:00`);
+        const end = new Date(`${dateStr}T${CLOSE_TIME}:00`);
+        const finalEntry = new Date(`${dateStr}T16:55:00`);
+        if (now < start) {
+            const diff = start - now;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            timerEl.innerText = `開催まで: ${days}日 ${hours}時間 ${minutes}分`;
+            barContainer.style.display = 'none';
+        } else if (now >= start && now <= end) {
+            const totalDuration = end - start;
+            const elapsed = now - start;
+            const percentage = (elapsed / totalDuration) * 100;
+            timerEl.innerText = `開催中 (終了まであと ${Math.floor((end-now)/60000)}分)`;
+            barContainer.style.display = 'block';
+            barEl.style.width = `${percentage}%`;
+            if(now > finalEntry) {
+                timerEl.innerText += " ※最終入場終了";
+                timerEl.style.color = "red";
+            }
+        } else {
+            timerEl.innerText = "イベントは終了しました";
+            barContainer.style.display = 'none';
+        }
+    }
+    setInterval(update, 1000);
+    update();
+}
+/* ================= UI INTERACTION ================= */
+window.switchTab = function(floor) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.map-layer').forEach(l => l.classList.remove('active'));
+    if (floor === '1F') {
+        document.querySelector('.tab-orange').classList.add('active');
+        document.getElementById('map-1f').classList.add('active');
+    } else {
+        document.querySelector('.tab-blue').classList.add('active');
+        document.getElementById('map-4f').classList.add('active');
+    }
+    resetZoom();
+};
+window.zoomIn = function() {
+    currentZoom = Math.min(currentZoom + 0.2, 3.0);
+    updateTransform();
+};
+window.zoomOut = function() {
+    currentZoom = Math.max(currentZoom - 0.2, 0.5);
+    updateTransform();
+};
+window.resetZoom = function() {
+    currentZoom = 1.0;
+    currentTranslate = {x:0, y:0};
+    updateTransform();
+};
+function updateTransform() {
+    const activeMap = document.querySelector('.map-layer.active');
+    if(activeMap) {
+        activeMap.style.transform = `translate(${currentTranslate.x}px, ${currentTranslate.y}px) scale(${currentZoom})`;
+    }
+}
+function setupDrag() {
+    const container = document.getElementById('map-container');
+    container.addEventListener('mousedown', startDrag);
+    container.addEventListener('touchstart', startDrag, {passive: false});
+    window.addEventListener('mousemove', drag);
+    window.addEventListener('touchmove', drag, {passive: false});
+    window.addEventListener('mouseup', endDrag);
+    window.addEventListener('touchend', endDrag);
+}
+function startDrag(e) {
+    isDragging = true;
+    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+    const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+    startX = clientX - currentTranslate.x;
+    startY = clientY - currentTranslate.y;
+}
+function drag(e) {
+    if (!isDragging) return;
+    e.preventDefault();
+    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+    const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+    currentTranslate.x = clientX - startX;
+    currentTranslate.y = clientY - startY;
+    updateTransform();
+}
+function endDrag() {
+    isDragging = false;
+}
+function showTooltip(e, id) {
+    const tooltip = document.getElementById('tooltip');
+    const status = boothState[id] || 0;
+    const statusText = ["なし", "行きたい", "訪問済"][status];
+    tooltip.innerHTML = `<strong>${id}</strong><br>状態: ${statusText}`;
+    tooltip.style.display = 'block';
+    tooltip.style.left = (e.pageX + 10) + 'px';
+    tooltip.style.top = (e.pageY + 10) + 'px';
+}
+function hideTooltip() {
+    document.getElementById('tooltip').style.display = 'none';
+}
+/* ================= DATA SHARING ================= */
+window.openShareModal = function() {
+    const modal = document.getElementById('share-modal');
+    const input = document.getElementById('share-url');
+    const qrContainer = document.getElementById('qrcode');
+    const jsonStr = JSON.stringify(boothState);
+    const encoded = btoa(jsonStr);
+    const url = window.location.protocol + "//" + window.location.host + window.location.pathname + "?data=" + encoded;
+    input.value = url;
+    qrContainer.innerHTML = "";
+    new QRCode(qrContainer, { text: url, width: 128, height: 128 });
+    modal.style.display = 'flex';
+};
+window.closeShareModal = function() {
+    document.getElementById('share-modal').style.display = 'none';
+};
+window.copyUrl = function() {
+    const input = document.getElementById('share-url');
+    input.select();
+    document.execCommand('copy');
+    alert("URLをコピーしました");
+};
+function loadStateFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const data = params.get('data');
+    if (data) {
+        try {
+            const jsonStr = atob(data);
+            const loadedState = JSON.parse(jsonStr);
+            if(confirm("共有されたマップデータを読み込みますか？（現在のデータは上書きされます）")) {
+                boothState = loadedState;
+                saveData();
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        } catch (e) {
+            console.error("Data parse error", e);
+        }
+    }
+}
+</script>
+</body>
+</html>
