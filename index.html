@@ -894,7 +894,7 @@
 
     <div id="tab-area">
         <div class="tab" data-floor="1F">
-            南１・２ホール(1F) 
+            南１・２ホール(1F)
             <span class="tab-stats">
                 <span class="want-to-go">行きたい: <span class="count" data-floor="1F" data-status="1">0</span></span>
                 <span class="visited">訪問済: <span class="count" data-floor="1F" data-status="2">0</span></span>
@@ -1234,6 +1234,8 @@
             updateStats();
             localStorage.setItem('boothState', JSON.stringify(boothState));
         }
+
+
         // ページ読み込み時に既存のマークをチェック
         function checkExistingMarks() {
             Object.entries(boothState).forEach(([id, status]) => {
@@ -1251,15 +1253,15 @@
             localStorage.setItem('boothState', JSON.stringify(boothState));
         }
 
+
         function getAdjacentBooths(id) {
+            if (!id) return []; // idがundefinedの場合は空配列を返す
             const adjacent = [];
             const firstChar = id.charAt(0);
             const num = parseInt(id.substring(1), 10);
-
             // 左右のブース
             adjacent.push(`${firstChar}${String(num - 1).padStart(2, '0')}`);
             adjacent.push(`${firstChar}${String(num + 1).padStart(2, '0')}`);
-
             // 上下のブース（アルファベットまたはひらがな）
             let prevChar, nextChar;
             if (/^[A-Za-z]$/.test(firstChar)) {
@@ -1271,26 +1273,25 @@
                 prevChar = index > 0 ? hiraganaOrder[index - 1] : null;
                 nextChar = index < hiraganaOrder.length - 1 ? hiraganaOrder[index + 1] : null;
             }
-
             if (prevChar) adjacent.push(`${prevChar}${String(num).padStart(2, '0')}`);
             if (nextChar) adjacent.push(`${nextChar}${String(num).padStart(2, '0')}`);
-
             // 存在するブースのみを返す
             return adjacent.filter(adjId => document.querySelector(`.booth[data-id="${adjId}"]`));
         }
 
+
         // ブースの見た目を更新
         function updateBoothVisually(id, status) {
             const el = document.querySelector(`.booth[data-id="${id}"]`);
-            if (el) {
-                el.dataset.status = status;
-                if (status == 1 || status == 2) {
-                    el.textContent = id;
-                } else {
-                    el.textContent = id.replace(/[A-Za-zあ-ん]/, '');
-                }
+            if (!el) return; // ブース要素が存在しない場合は処理を中断
+            el.dataset.status = status;
+            if (status == 1 || status == 2) {
+                el.textContent = id;
+            } else {
+                el.textContent = id.replace(/[A-Za-zあ-ん]/, '');
             }
         }
+
 
         // 空のセルを生成
         function createEmptyCell() {
@@ -1719,19 +1720,91 @@
                 booth.style.borderStyle = 'solid';
             });
         }
+        // グループ化されたブースをキャッシュ
+        let boothGroupsCache = {};
+
+        function getBoothGroups() {
+            if (Object.keys(boothGroupsCache).length > 0) {
+                return boothGroupsCache;
+            }
+
+            const groups = {};
+            const visited = new Set();
+
+            document.querySelectorAll('.booth').forEach(booth => {
+                const id = booth.dataset.id;
+                if (!id || visited.has(id)) return;
+
+                const name = boothInfo[id]?.name;
+                if (!name) return;
+
+                const group = [id];
+                const queue = [id];
+                visited.add(id);
+
+                while (queue.length > 0) {
+                    const currentId = queue.shift();
+                    const adjacentBooths = getAdjacentBooths(currentId);
+
+                    adjacentBooths.forEach(adjId => {
+                        if (!visited.has(adjId) && boothInfo[adjId]?.name === name) {
+                            group.push(adjId);
+                            visited.add(adjId);
+                            queue.push(adjId);
+                        }
+                    });
+                }
+
+                if (group.length > 0) {
+                    groups[name] = group;
+                }
+            });
+
+            boothGroupsCache = groups;
+            return groups;
+        }
+
         // 集計エリアの初期化
         function updateStats() {
-            const booths1F = document.querySelectorAll('#map-container-1F .booth');
-            const booths4F = document.querySelectorAll('#map-container-4F .booth');
-            const wantToGo1F = Array.from(booths1F).filter(booth => booth.dataset.status == 1).length;
-            const visited1F = Array.from(booths1F).filter(booth => booth.dataset.status == 2).length;
-            const wantToGo4F = Array.from(booths4F).filter(booth => booth.dataset.status == 1).length;
-            const visited4F = Array.from(booths4F).filter(booth => booth.dataset.status == 2).length;
-            document.querySelector('.count[data-floor="1F"][data-status="1"]').textContent = wantToGo1F;
-            document.querySelector('.count[data-floor="1F"][data-status="2"]').textContent = visited1F;
-            document.querySelector('.count[data-floor="4F"][data-status="1"]').textContent = wantToGo4F;
-            document.querySelector('.count[data-floor="4F"][data-status="2"]').textContent = visited4F;
+            const wantToGo1F = new Set();
+            const visited1F = new Set();
+            const wantToGo4F = new Set();
+            const visited4F = new Set();
+
+            // すべてのブースを走査
+            document.querySelectorAll('.booth').forEach(booth => {
+                const id = booth.dataset.id;
+                const status = booth.dataset.status;
+                if (!id) return; // idがundefinedの場合はスキップ
+
+                const floor = /^[A-Za-z]/.test(id.charAt(0)) ? '1F' : '4F';
+
+                if (status === '1') {
+                    // 同じサークル名の隣接ブースは1つとしてカウント
+                    const name = boothInfo[id]?.name;
+                    if (name) {
+                        const key = `${name}-${floor}`;
+                        if (floor === '1F') wantToGo1F.add(key);
+                        else wantToGo4F.add(key);
+                    }
+                } else if (status === '2') {
+                    const name = boothInfo[id]?.name;
+                    if (name) {
+                        const key = `${name}-${floor}`;
+                        if (floor === '1F') visited1F.add(key);
+                        else visited4F.add(key);
+                    }
+                }
+            });
+
+            // カウントを更新
+            document.querySelector('.count[data-floor="1F"][data-status="1"]').textContent = wantToGo1F.size;
+            document.querySelector('.count[data-floor="1F"][data-status="2"]').textContent = visited1F.size;
+            document.querySelector('.count[data-floor="4F"][data-status="1"]').textContent = wantToGo4F.size;
+            document.querySelector('.count[data-floor="4F"][data-status="2"]').textContent = visited4F.size;
         }
+
+
         // 初期化
         window.onload = async function () {
             await loadBoothInfo();
