@@ -1071,7 +1071,7 @@
                 let scale = 1;
                 let isDragging = false;
                 let startX, startY;
-                let startLeft, startTop;
+                let scrollLeft, scrollTop;
                 let touchStartDistance = 0;
                 let touchStartScale = 1;
 
@@ -1096,8 +1096,8 @@
                     isDragging = true;
                     startX = e.clientX;
                     startY = e.clientY;
-                    startLeft = parseFloat(scrollContainer.style.left) || 0;
-                    startTop = parseFloat(scrollContainer.style.top) || 0;
+                    scrollLeft = parseFloat(scrollContainer.style.left) || 0;
+                    scrollTop = parseFloat(scrollContainer.style.top) || 0;
                     scrollContainer.style.cursor = 'grabbing';
                     e.preventDefault();
                 });
@@ -1106,8 +1106,8 @@
                     if (!isDragging) return;
                     const x = e.clientX;
                     const y = e.clientY;
-                    const walkX = (x - startX) / scale + startLeft;
-                    const walkY = (y - startY) / scale + startTop;
+                    const walkX = (x - startX) + scrollLeft;
+                    const walkY = (y - startY) + scrollTop;
                     scrollContainer.style.left = `${walkX}px`;
                     scrollContainer.style.top = `${walkY}px`;
                 });
@@ -1117,9 +1117,17 @@
                     scrollContainer.style.cursor = 'grab';
                 });
 
-                // タッチイベントでズーム（スマホ用）
-                mapContainer.addEventListener('touchstart', function (e) {
-                    if (e.touches.length === 2) {
+                // タッチイベントでパン（スマホ用）
+                scrollContainer.addEventListener('touchstart', function (e) {
+                    if (e.touches.length === 1) {
+                        isDragging = true;
+                        startX = e.touches[0].clientX;
+                        startY = e.touches[0].clientY;
+                        scrollLeft = parseFloat(scrollContainer.style.left) || 0;
+                        scrollTop = parseFloat(scrollContainer.style.top) || 0;
+                        scrollContainer.style.cursor = 'grabbing';
+                        e.preventDefault();
+                    } else if (e.touches.length === 2) {
                         e.preventDefault();
                         touchStartDistance = Math.hypot(
                             e.touches[0].pageX - e.touches[1].pageX,
@@ -1129,8 +1137,16 @@
                     }
                 }, { passive: false });
 
-                mapContainer.addEventListener('touchmove', function (e) {
-                    if (e.touches.length === 2) {
+                scrollContainer.addEventListener('touchmove', function (e) {
+                    if (e.touches.length === 1 && isDragging) {
+                        e.preventDefault();
+                        const x = e.touches[0].clientX;
+                        const y = e.touches[0].clientY;
+                        const walkX = (x - startX) + scrollLeft;
+                        const walkY = (y - startY) + scrollTop;
+                        scrollContainer.style.left = `${walkX}px`;
+                        scrollContainer.style.top = `${walkY}px`;
+                    } else if (e.touches.length === 2) {
                         e.preventDefault();
                         const currentDistance = Math.hypot(
                             e.touches[0].pageX - e.touches[1].pageX,
@@ -1140,22 +1156,12 @@
                         const touchCenterY = (e.touches[0].pageY + e.touches[1].pageY) / 2 - mapContainer.getBoundingClientRect().top;
                         const delta = currentDistance / touchStartDistance;
                         zoom(touchCenterX, touchCenterY, delta);
-                    } else if (e.touches.length === 1 && !isDragging) {
-                        e.preventDefault();
-                        isDragging = true;
-                        startX = e.touches[0].pageX;
-                        startY = e.touches[0].pageY;
-                        startLeft = parseFloat(scrollContainer.style.left) || 0;
-                        startTop = parseFloat(scrollContainer.style.top) || 0;
-                        scrollContainer.style.cursor = 'grabbing';
                     }
                 }, { passive: false });
 
-                mapContainer.addEventListener('touchend', function (e) {
-                    if (e.touches.length < 2) {
-                        isDragging = false;
-                        scrollContainer.style.cursor = 'grab';
-                    }
+                scrollContainer.addEventListener('touchend', function (e) {
+                    isDragging = false;
+                    scrollContainer.style.cursor = 'grab';
                 }, { passive: false });
 
                 // ズーム処理（共通）
