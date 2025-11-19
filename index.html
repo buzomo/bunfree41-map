@@ -1680,100 +1680,135 @@
             startTimer();
             updateStats();
         };
-document.addEventListener('DOMContentLoaded', function () {
-    const mapContainers = [document.getElementById('map-container-1F'), document.getElementById('map-container-4F')];
-    let scale = 0.7;
-    let isPanning = false; // パン操作中かどうかを管理
-    let isDragging = false;
-    let startX, startY;
-    let scrollLeft, scrollTop;
-    let touchStartX, touchStartY;
+        document.addEventListener('DOMContentLoaded', function () {
+            const mapContainers = [document.getElementById('map-container-1F'), document.getElementById('map-container-4F')];
+            let scale = 0.7;
+            let isPanning = false;
+            let isDragging = false;
 
-    mapContainers.forEach(mapContainer => {
-        const scrollContainer = mapContainer.querySelector('.scroll-container');
+            console.log('DOMContentLoaded: Initializing...');
 
-        // マウスホイールでズーム
-        mapContainer.addEventListener('wheel', function (e) {
-            e.preventDefault();
-            const rect = mapContainer.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            const delta = e.deltaY * -0.01;
-            const newScale = Math.max(0.7, Math.min(3, scale + delta));
-            const offsetX = (mouseX - scrollContainer.offsetWidth * (1 - scale) / 2) / scale;
-            const offsetY = (mouseY - scrollContainer.offsetHeight * (1 - scale) / 2) / scale;
-            scale = newScale;
-            scrollContainer.style.transform = `scale(${scale})`;
-            scrollContainer.style.left = `${-offsetX * scale + mouseX}px`;
-            scrollContainer.style.top = `${-offsetY * scale + mouseY}px`;
-        }, { passive: false });
+            mapContainers.forEach(mapContainer => {
+                const scrollContainer = mapContainer.querySelector('.scroll-container');
+                const booths = mapContainer.querySelectorAll('.booth');
 
-        // パン操作開始（マウス/タッチ共通）
-        function startPan(e, isTouch = false) {
-            isDragging = true;
-            isPanning = true;
-            scrollContainer.style.cursor = 'grabbing';
-            if (isTouch) {
-                const touch = e.touches[0];
-                touchStartX = touch.clientX;
-                touchStartY = touch.clientY;
-            } else {
-                startX = e.clientX;
-                startY = e.clientY;
-            }
-            scrollLeft = parseFloat(scrollContainer.style.left) || 0;
-            scrollTop = parseFloat(scrollContainer.style.top) || 0;
-            e.preventDefault();
-        }
+                // マウスホイールでズーム
+                mapContainer.addEventListener('wheel', function (e) {
+                    e.preventDefault();
+                    const rect = mapContainer.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+                    const delta = e.deltaY * -0.01;
+                    const newScale = Math.max(0.7, Math.min(3, scale + delta));
+                    const offsetX = (mouseX - scrollContainer.offsetWidth * (1 - scale) / 2) / scale;
+                    const offsetY = (mouseY - scrollContainer.offsetHeight * (1 - scale) / 2) / scale;
+                    scale = newScale;
+                    scrollContainer.style.transform = `scale(${scale})`;
+                    scrollContainer.style.left = `${-offsetX * scale + mouseX}px`;
+                    scrollContainer.style.top = `${-offsetY * scale + mouseY}px`;
+                }, { passive: false });
 
-        // パン操作中（マウス/タッチ共通）
-        function movePan(e, isTouch = false) {
-            if (!isDragging) return;
-            const x = isTouch ? e.touches[0].clientX : e.clientX;
-            const y = isTouch ? e.touches[0].clientY : e.clientY;
-            const walkX = (x - (isTouch ? touchStartX : startX)) + scrollLeft;
-            const walkY = (y - (isTouch ? touchStartY : startY)) + scrollTop;
-            scrollContainer.style.left = `${walkX}px`;
-            scrollContainer.style.top = `${walkY}px`;
-            if (!isTouch) e.preventDefault();
-        }
+                // タッチ開始
+                scrollContainer.addEventListener('touchstart', function (e) {
+                    console.log('touchstart event fired');
+                    isDragging = true;
+                    isPanning = true;
+                    const touch = e.touches[0];
+                    touchStartX = touch.clientX;
+                    touchStartY = touch.clientY;
+                    scrollLeft = parseFloat(scrollContainer.style.left) || 0;
+                    scrollTop = parseFloat(scrollContainer.style.top) || 0;
+                    scrollContainer.style.cursor = 'grabbing';
 
-        // パン操作終了（マウス/タッチ共通）
-        function endPan() {
-            isDragging = false;
-            scrollContainer.style.cursor = 'grab';
-            setTimeout(() => { isPanning = false; }, 200); // 200ms待機してからフラグ解除
-        }
+                    // タッチ操作中はブースのクリックを物理的に無効化
+                    booths.forEach(booth => {
+                        booth.style.pointerEvents = 'none';
+                    });
+                    e.preventDefault();
+                }, { passive: false });
 
-        // マウスドラッグでパン（PC用）
-        scrollContainer.addEventListener('mousedown', (e) => startPan(e));
-        document.addEventListener('mousemove', (e) => movePan(e));
-        document.addEventListener('mouseup', endPan);
+                // タッチムーブ
+                document.addEventListener('touchmove', function (e) {
+                    if (!isDragging) return;
+                    console.log('touchmove event fired');
+                    const touch = e.touches[0];
+                    const x = touch.clientX;
+                    const y = touch.clientY;
+                    const walkX = (x - touchStartX) + scrollLeft;
+                    const walkY = (y - touchStartY) + scrollTop;
+                    scrollContainer.style.left = `${walkX}px`;
+                    scrollContainer.style.top = `${walkY}px`;
+                    e.preventDefault();
+                }, { passive: false });
 
-        // タッチ開始（スマホ用）
-        scrollContainer.addEventListener('touchstart', (e) => startPan(e, true), { passive: false });
-        document.addEventListener('touchmove', (e) => movePan(e, true), { passive: false });
-        document.addEventListener('touchend', endPan);
+                // タッチ終了
+                document.addEventListener('touchend', function (e) {
+                    console.log('touchend event fired');
+                    isDragging = false;
+                    scrollContainer.style.cursor = 'grab';
 
-        // 初期ズームを設定
-        scrollContainer.style.transform = `scale(${scale})`;
-        scrollContainer.style.left = '0';
-        scrollContainer.style.top = '0';
-    });
+                    // 300ms後にブースのクリックを物理的に有効化
+                    setTimeout(() => {
+                        booths.forEach(booth => {
+                            booth.style.pointerEvents = 'auto';
+                        });
+                        isPanning = false;
+                        console.log('Booth clicks re-enabled');
+                    }, 300);
+                });
 
-    // ブースクリック時のモーダル表示
-    document.querySelectorAll('.booth').forEach(booth => {
-        booth.addEventListener('click', function (e) {
-            if (isPanning) {
-                e.stopPropagation();
-                e.preventDefault();
-                return; // パン操作中はモーダルを表示しない
-            }
-            const boothId = this.dataset.id;
-            showBoothModal(boothId);
+                // マウスドラッグ開始
+                scrollContainer.addEventListener('mousedown', function (e) {
+                    console.log('mousedown event fired');
+                    isDragging = true;
+                    isPanning = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    scrollLeft = parseFloat(scrollContainer.style.left) || 0;
+                    scrollTop = parseFloat(scrollContainer.style.top) || 0;
+                    scrollContainer.style.cursor = 'grabbing';
+                    e.preventDefault();
+                });
+
+                // マウスムーブ
+                document.addEventListener('mousemove', function (e) {
+                    if (!isDragging) return;
+                    const x = e.clientX;
+                    const y = e.clientY;
+                    const walkX = (x - startX) + scrollLeft;
+                    const walkY = (y - startY) + scrollTop;
+                    scrollContainer.style.left = `${walkX}px`;
+                    scrollContainer.style.top = `${walkY}px`;
+                });
+
+                // マウスアップ
+                document.addEventListener('mouseup', function () {
+                    isDragging = false;
+                    scrollContainer.style.cursor = 'grab';
+                    setTimeout(() => { isPanning = false; }, 300);
+                });
+
+                // 初期ズームを設定
+                scrollContainer.style.transform = `scale(${scale})`;
+                scrollContainer.style.left = '0';
+                scrollContainer.style.top = '0';
+            });
+
+            // ブースのクリックイベント
+            document.querySelectorAll('.booth').forEach(booth => {
+                booth.addEventListener('click', function (e) {
+                    if (isPanning) {
+                        console.log('Click prevented due to isPanning');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                    }
+                    const boothId = this.dataset.id;
+                    console.log('Showing booth modal for:', boothId);
+                    showBoothModal(boothId);
+                });
+            });
         });
-    });
-});
 
         // ドキュメント全体の mouseup イベント
         document.addEventListener('mouseup', (e) => {
