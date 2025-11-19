@@ -12,8 +12,8 @@
 
     <style>
         :root {
-            --pink-highlight: #ff69b4;
-            --green-visited: #2ecc71;
+            --pink-highlight: #ff0080;
+            --green-visited: #00ba2f;
             --bg-blue: #e6f7ff;
             --bg-orange: #ffcc99;
             --bg-bt-area: transparent;
@@ -243,17 +243,7 @@
             cursor: default;
         }
 
-        .booth[data-status="1"] {
-            background-color: var(--pink-highlight);
-            color: white;
-            border-color: var(--pink-highlight);
-        }
 
-        .booth[data-status="2"] {
-            background-color: var(--green-visited);
-            color: white;
-            border-color: var(--green-visited);
-        }
 
         .x-main-content {
             flex-grow: 1;
@@ -426,6 +416,312 @@
             align-items: center;
             flex-direction: column;
         }
+
+        /* ツールチップスタイル */
+        .booth:hover::after {
+            content: attr(data-name);
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            /* 改行を反映 */
+            pointer-events: none;
+            line-height: 1.2;
+            max-width: 200px;
+            text-align: center;
+            min-width: 100px;
+            /* 最小幅を設定 */
+            min-height: 30px;
+            /* 最小高さを設定 */
+        }
+
+
+        /* Main Genre Border Colors */
+        .booth[data-main-genre="小説"] {
+            border-color: #87CEEB;
+        }
+
+        .booth[data-main-genre="詩歌"] {
+            border-color: #FFD700;
+        }
+
+        .booth[data-main-genre="評論・研究"] {
+            border-color: #98FB98;
+        }
+
+        .booth[data-main-genre="ノンフィクション"] {
+            border-color: #DDA0DD;
+        }
+
+        /* Sub-Genre Background Colors for 小説 */
+        .booth[data-sub-genre*="SF"] {
+            background-color: #E0F6FF;
+        }
+
+        .booth[data-sub-genre*="BL"] {
+            background-color: #FFB6C1;
+        }
+
+        .booth[data-sub-genre*="SNS・ブログ"] {
+            background-color: #90EE90;
+        }
+
+        .booth[data-sub-genre*="アンソロジー"] {
+            background-color: #B8E2FF;
+        }
+
+        .booth[data-sub-genre*="エンタメ・大衆小説"] {
+            background-color: #90CDFF;
+        }
+
+        .booth[data-sub-genre*="ファンタジー・幻想文学"] {
+            background-color: #DDA0DD;
+        }
+
+        .booth[data-sub-genre*="ミステリー"] {
+            background-color: #4685FF;
+        }
+
+        .booth[data-sub-genre*="ライトノベル"] {
+            background-color: #87CEFA;
+        }
+
+        .booth[data-sub-genre*="児童文学・絵本"] {
+            background-color: #3A7BD5;
+        }
+
+        .booth[data-sub-genre*="妖怪・もののけ"] {
+            background-color: #9370DB;
+        }
+
+        .booth[data-sub-genre*="恋愛"] {
+            background-color: #FFC0CB;
+        }
+
+        .booth[data-sub-genre*="戯曲・シナリオ"] {
+            background-color: #E6F3FF;
+        }
+
+        .booth[data-sub-genre*="百合"] {
+            background-color: #DB7093;
+        }
+
+        .booth[data-sub-genre*="短編・掌編・ショートショート"] {
+            background-color: #AFEEEE;
+        }
+
+        .booth[data-sub-genre*="純文学"] {
+            background-color: #99CCFF;
+        }
+
+        .booth[data-sub-genre*="ホラー・怪奇"] {
+            background-color: #6BA9FF;
+        }
+
+        .booth[data-sub-genre*="歴史・古典"] {
+            background-color: #CCE7FF;
+        }
+
+        .booth[data-sub-genre*="海外文学・翻訳"] {
+            background-color: #B3DBFF;
+        }
+
+        .booth[data-sub-genre*="青春・学園"] {
+            background-color: #98FB98;
+        }
+
+        .booth[data-sub-genre*="郷土"] {
+            background-color: #80BFFF;
+        }
+
+        .booth[data-sub-genre*="その他"][data-main-genre="小説"] {
+            background-color: #C2E0FF;
+        }
+
+        /* Sub-Genre Background Colors for 詩歌 */
+        .booth[data-sub-genre*="イラスト・写真"] {
+            background-color: #FFFACD;
+        }
+
+        .booth[data-sub-genre*="俳句・短歌・川柳"] {
+            background-color: #FFEFB5;
+        }
+
+        .booth[data-sub-genre*="定型詩"] {
+            background-color: #FFE68C;
+        }
+
+        .booth[data-sub-genre*="現代詩・散文詩"] {
+            background-color: #FFDC64;
+        }
+
+        .booth[data-sub-genre*="朗読・歌唱"] {
+            background-color: #FFDAB9;
+        }
+
+        .booth[data-sub-genre*="その他"][data-main-genre="詩歌"] {
+            background-color: #FFEED1;
+        }
+
+        /* Sub-Genre Background Colors for 評論・研究 */
+        .booth[data-sub-genre*="のりもの・交通"] {
+            background-color: #CCFFCC;
+        }
+
+        .booth[data-sub-genre*="サブカルチャー"] {
+            background-color: #B3FFB3;
+        }
+
+        .booth[data-sub-genre*="ファッション"] {
+            background-color: #99FF99;
+        }
+
+        .booth[data-sub-genre*="文化研究"] {
+            background-color: #80FF80;
+        }
+
+        .booth[data-sub-genre*="文芸批評"] {
+            background-color: #B8FFB8;
+        }
+
+        .booth[data-sub-genre*="映画"] {
+            background-color: #D0FFD0;
+        }
+
+        .booth[data-sub-genre*="演劇・戯曲・演芸"] {
+            background-color: #E6FFE6;
+        }
+
+        .booth[data-sub-genre*="現代思想・哲学"] {
+            background-color: #D9FFD9;
+        }
+
+        .booth[data-sub-genre*="社会批評・政治経済"] {
+            background-color: #CFFFCF;
+        }
+
+        .booth[data-sub-genre*="美術"] {
+            background-color: #C2FFC2;
+        }
+
+        .booth[data-sub-genre*="郷土"][data-main-genre="評論・研究"] {
+            background-color: #B5FFB5;
+        }
+
+        .booth[data-sub-genre*="音楽"] {
+            background-color: #A9FFA9;
+        }
+
+        .booth[data-sub-genre*="食文化・料理・グルメ"] {
+            background-color: #9EFF9E;
+        }
+
+        .booth[data-sub-genre*="アイドル・芸能"] {
+            background-color: #FFD700;
+        }
+
+        .booth[data-sub-genre*="アニメ・マンガ・ゲーム"] {
+            background-color: #FFA07A;
+        }
+
+        .booth[data-sub-genre*="ジェンダー・LGBTQ"] {
+            background-color: #EE82EE;
+        }
+
+        .booth[data-sub-genre*="ネット文化・SNS"] {
+            background-color: #7FFFD4;
+        }
+
+        .booth[data-sub-genre*="ビジネス"] {
+            background-color: #F0E68C;
+        }
+
+        .booth[data-sub-genre*="ファンタジー・幻想文学・怪奇文学"] {
+            background-color: #DDA0DD;
+        }
+
+        .booth[data-sub-genre*="メディア"] {
+            background-color: #B0E0E6;
+        }
+
+        .booth[data-sub-genre*="出版"] {
+            background-color: #F5F5DC;
+        }
+
+        .booth[data-sub-genre*="都市伝説・超常現象"] {
+            background-color: #e0e0e0;
+            color: rgb(170, 170, 170);
+        }
+
+        .booth[data-sub-genre*="その他"][data-main-genre="評論・研究"] {
+            background-color: #E0FFE0;
+        }
+
+        /* Sub-Genre Background Colors for ノンフィクション */
+        .booth[data-sub-genre*="インタビュー"] {
+            background-color: #F0E6FF;
+        }
+
+        .booth[data-sub-genre*="エッセイ・随筆・体験記"] {
+            background-color: #E6E6FA;
+        }
+
+        .booth[data-sub-genre*="ルポ・ドキュメンタリー"] {
+            background-color: #D8BFD8;
+        }
+
+        .booth[data-sub-genre*="写真・映像"] {
+            background-color: #F0E68C;
+        }
+
+        .booth[data-sub-genre*="アウトドア・釣り"] {
+            background-color: #87CEFA;
+        }
+
+        .booth[data-sub-genre*="出産・育児・教育"] {
+            background-color: #B088FF;
+        }
+
+        .booth[data-sub-genre*="動物・ペット"] {
+            background-color: #F5E6FF;
+        }
+
+        .booth[data-sub-genre*="旅行記"] {
+            background-color: #E6D3FF;
+        }
+
+        .booth[data-sub-genre*="雑誌"] {
+            background-color: #CCA8FF;
+        }
+
+        .booth[data-sub-genre*="その他"][data-main-genre="ノンフィクション"] {
+            background-color: #E8DFFF;
+        }
+
+
+        /* 状態ごとのスタイル（背景色をコメントアウトし、文字色のみ適用） */
+        .booth[data-status="1"] {
+            border: red solid 4px;
+            color: white;
+            font-size: 20px;
+            background-color: var(--pink-highlight) !important;
+        }
+
+        .booth[data-status="2"] {
+            border: forestgreen solid 4px;
+            font-size: 20px;
+            color: white;
+            background-color: var(--green-visited) !important;
+        }
+
+
+        /* 行った */
     </style>
 </head>
 
@@ -680,9 +976,32 @@
             </div>
         </div>
     </div>
+    <!-- ブース情報モーダル -->
+    <div id="booth-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1001; justify-content: center; align-items: center;">
+        <div
+            style="background: white; padding: 20px; border-radius: 8px; text-align: center; max-width: 300px; width: 90%;">
+            <div id="booth-modal-id" style="font-size: 24px; font-weight: bold; margin-bottom: 10px;"></div>
+            <h3 id="booth-modal-name" style="margin-top: 0; margin-bottom: 15px;">
+                <a id="booth-modal-name-link" href="#" target="_blank"
+                    style="color: inherit; text-decoration: none; cursor: pointer;"></a>
+            </h3>
+            <div id="booth-modal-genre"
+                style="margin: 10px 0; padding: 8px; border-radius: 4px; display: inline-block;"></div>
+            <div style="display: flex; justify-content: center; gap: 10px; margin: 20px 0;">
+                <button id="booth-modal-want-to-go"
+                    style="background: var(--pink-highlight); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">行きたい</button>
+                <button id="booth-modal-visited"
+                    style="background: var(--green-visited); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">訪問済</button>
+            </div>
+        </div>
+    </div>
+
+
+
     <script>
         let isZooming = false;
-
+        let boothInfo = {}
         // イベント日時設定（例: 2025年12月20日）
         const EVENT_DATE = "2025-11-23";
         const OPEN_TIME = "12:00";
@@ -732,6 +1051,20 @@
             booth.dataset.id = id;
             booth.dataset.status = boothState[id] || '0';
 
+            // ブース情報があれば属性を設定
+            if (boothInfo[id]) {
+                booth.dataset.mainGenre = boothInfo[id].genre[0] || "その他";
+                booth.dataset.subGenre = boothInfo[id].genre.slice(1).join(',') || "その他";
+                booth.dataset.genre = boothInfo[id].genre.join(',');
+                booth.dataset.name = boothInfo[id].name;
+            } else {
+                // ブース情報がなくてもデフォルト値を設定
+                booth.dataset.mainGenre = "その他";
+                booth.dataset.subGenre = "その他";
+                booth.dataset.genre = "";
+                booth.dataset.name = id;
+            }
+
             // 初期表示
             if (boothState[id] == 1 || boothState[id] == 2) {
                 booth.textContent = id;
@@ -739,11 +1072,11 @@
                 booth.textContent = id.replace(/[A-Za-zあ-ん]/, '');
             }
 
+            // ホバー時の表示
             booth.addEventListener('mouseover', () => {
-                booth.textContent = id; // ホバー時はフル表記
+                booth.textContent = id;
             });
             booth.addEventListener('mouseout', () => {
-                // ピンク・緑の場合はフル表記、それ以外は数字のみ
                 if (booth.dataset.status == 1 || booth.dataset.status == 2) {
                     booth.textContent = id;
                 } else {
@@ -751,36 +1084,52 @@
                 }
             });
 
+            // クリック/タッチ時のモーダル表示
             booth.addEventListener('click', (e) => {
                 if (!isZooming) {
                     e.stopPropagation();
-                    toggleBooth(id);
+                    showBoothModal(id);
                 }
             });
             booth.addEventListener('touchend', (e) => {
                 if (!isZooming) {
                     e.preventDefault();
-                    toggleBooth(id);
+                    showBoothModal(id);
                 }
             });
 
             return booth;
         }
 
-
         // ブースの行を生成
         function createBoothRow(container, start, end, direction, letter) {
             const blockRow = document.createElement('div');
             blockRow.className = `block-row ${direction}`;
+            // 範囲を決定
             const range = direction === 'reverse'
                 ? Array.from({ length: start - end + 1 }, (_, i) => start - i)
                 : Array.from({ length: end - start + 1 }, (_, i) => start + i);
             range.forEach(i => {
-                const id = `${letter}${i.toString().padStart(2, '0')}`;
-                blockRow.appendChild(createBooth(id));
+                // 4桁の場合（例: 0102 → A01, A02）
+                if (i.toString().length === 4) {
+                    const first = i.toString().substring(0, 2);  // 01
+                    const second = i.toString().substring(2, 4); // 02
+                    const id1 = `${letter}${first}`;
+                    const id2 = `${letter}${second}`;
+                    blockRow.appendChild(createBooth(id1));
+                    blockRow.appendChild(createBooth(id2));
+                }
+                // 2桁の場合（例: 01 → A01）
+                else {
+                    const id = `${letter}${i.toString().padStart(2, '0')}`;
+                    blockRow.appendChild(createBooth(id));
+                }
             });
             container.appendChild(blockRow);
         }
+
+
+
         // X行のブースを生成
         function createXRow() {
             const xRow = document.createElement('div');
@@ -1084,8 +1433,142 @@
             setInterval(update, 1000);
             update();
         }
+        // ブース情報モーダル表示
+        async function showBoothModal(boothId) {
+            try {
+                const info = boothInfo[boothId];
+                if (info) {
+                    const modal = document.getElementById('booth-modal');
+                    const idEl = document.getElementById('booth-modal-id');
+                    const nameLink = document.getElementById('booth-modal-name-link');
+                    const genreEl = document.getElementById('booth-modal-genre');
+
+                    idEl.textContent = boothId; // ブース番号を大きく表示
+                    nameLink.textContent = info.name;
+                    nameLink.href = info.url;
+
+                    // ジャンル表示にジャンルカラーを反映
+                    genreEl.textContent = info.genre.join(' / ');
+                    genreEl.style.backgroundColor = getGenreColor(info.genre[0], info.genre.slice(1).join(','));
+
+                    modal.style.display = 'flex';
+
+                    // 「行きたい」「訪問済」ボタンのイベントリスナー
+                    document.getElementById('booth-modal-want-to-go').onclick = () => {
+                        toggleBooth(boothId);
+                        updateBoothVisually(boothId, 1);
+                        modal.style.display = 'none';
+                    };
+                    document.getElementById('booth-modal-visited').onclick = () => {
+                        toggleBooth(boothId);
+                        updateBoothVisually(boothId, 2);
+                        modal.style.display = 'none';
+                    };
+                } else {
+                    alert('ブース情報が見つかりません。');
+                }
+            } catch (error) {
+                console.error('ブース情報の読み込みに失敗しました:', error);
+                alert('ブース情報の読み込みに失敗しました。');
+            }
+        }
+
+
+        // ジャンルカラーを取得する関数
+        function getGenreColor(mainGenre, subGenre) {
+            // メインジャンルごとのデフォルトカラー
+            const mainGenreColors = {
+                "小説": "#E0F6FF",
+                "詩歌": "#FFEED1",
+                "評論・研究": "#E0FFE0",
+                "ノンフィクション": "#E8DFFF",
+                "その他": "#f0f0f0"
+            };
+            // サブジャンルごとのカラー（CSSから抜粋）
+            const subGenreColors = {
+                "SF": "#E0F6FF",
+                "BL": "#FFB6C1",
+                "ファンタジー・幻想文学": "#DDA0DD",
+                "ミステリー": "#4685FF",
+                "ライトノベル": "#87CEFA",
+                "恋愛": "#FFC0CB",
+                "ホラー・怪奇": "#6BA9FF",
+                "歴史・古典": "#CCE7FF",
+                "海外文学・翻訳": "#B3DBFF",
+                "青春・学園": "#98FB98",
+                "俳句・短歌・川柳": "#FFEFB5",
+                "現代詩・散文詩": "#FFDC64",
+                "文芸批評": "#B8FFB8",
+                "社会批評・政治経済": "#CFFFCF",
+                "ジェンダー・LGBTQ": "#EE82EE",
+                "エッセイ・随筆・体験記": "#E6E6FA",
+                "ルポ・ドキュメンタリー": "#D8BFD8",
+                "インタビュー": "#F0E6FF",
+                "旅行記": "#E6D3FF"
+            };
+            // サブジャンルが指定されている場合はサブジャンルのカラーを優先
+            for (const [key, color] of Object.entries(subGenreColors)) {
+                if (subGenre.includes(key)) {
+                    return color;
+                }
+            }
+            // メインジャンルのカラーを返す
+            return mainGenreColors[mainGenre] || "#f0f0f0";
+        }
+
+        // モーダル外側タップで閉じる
+        document.getElementById('booth-modal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                document.getElementById('booth-modal').style.display = 'none';
+            }
+        });
+
+
+        // booth.jsonを読み込む関数
+        async function loadBoothInfo() {
+            try {
+                const response = await fetch('booth.json');
+                if (!response.ok) {
+                    throw new Error('booth.jsonの読み込みに失敗しました');
+                }
+                boothInfo = await response.json();
+                console.log('ブース情報を読み込みました:', boothInfo);
+            } catch (error) {
+                console.error('ブース情報の読み込みエラー:', error);
+                boothInfo = {};
+            }
+        }
+
+        // ブースのデータ属性を更新する関数
+        function updateBoothAttributes() {
+            document.querySelectorAll('.booth').forEach(booth => {
+                const id = booth.dataset.id;
+                if (boothInfo[id]) {
+                    booth.dataset.mainGenre = boothInfo[id].genre[0] || "その他";
+                    booth.dataset.subGenre = boothInfo[id].genre.slice(1).join(',') || "その他";
+                    booth.dataset.genre = boothInfo[id].genre.join(',');
+                    booth.dataset.name = boothInfo[id].name;
+                }
+            });
+        }
+
+
         // 初期化
-        window.onload = function () {
+        window.onload = async function () {
+
+
+            await loadBoothInfo();
+
+            // ブース情報を反映
+            document.querySelectorAll('.booth').forEach(booth => {
+                const id = booth.dataset.id;
+                if (boothInfo[id]) {
+                    booth.dataset.mainGenre = boothInfo[id].genre[0] || "その他";
+                    booth.dataset.subGenre = boothInfo[id].genre.slice(1).join(',') || "その他";
+                    booth.dataset.genre = boothInfo[id].genre.join(',');
+                    booth.dataset.name = boothInfo[id].name;
+                }
+            });
             const islandsContainer1F = document.getElementById('islands-container-1F');
             const islandsContainer4F = document.getElementById('islands-container-4F');
             // アルファベット行を追加
@@ -1218,6 +1701,12 @@
                     container.classList.add('active');
                 }
             });
+            document.getElementById('booth-modal').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) {
+                    document.getElementById('booth-modal').style.display = 'none';
+                }
+            });
+
             // タイマー開始
             startTimer();
             updateStats();
