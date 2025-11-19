@@ -15,7 +15,7 @@
             --pink-highlight: #ff0080;
             --green-visited: #00ba2f;
             --bg-blue: #e6f7ff;
-            --bg-orange: #ffcc99;
+            --bg-orange: #fff8f1;
             --bg-bt-area: transparent;
             --tab-blue: #87ceeb;
             --tab-blue-active: #4682b4;
@@ -766,14 +766,23 @@
         <div
             style="background: white; padding: 20px; border-radius: 8px; text-align: center; max-width: 300px; width: 90%;">
             <h3 style="margin-top: 0;">スマホ・PCに送る</h3>
-            <p>「行きたい」「訪問済」の状態を引き継げます！</h3>
+            <p>「行きたい」「訪問済」の状態を引き継げます！</p>
             <div id="qrcode" style="margin: 15px auto; width: fit-content;"></div>
             <input type="text" id="share-url" readonly
                 style="width: 100%; margin: 10px 0; padding: 8px; box-sizing: border-box; text-align: center;">
+            <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                <button id="reset-marks"
+                    style="background: #ff6b6b; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; flex: 1; margin-right: 5px;">マークをすべてリセット</button>
+                <button id="tweet-app"
+                    style="background: #1da1f2; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; flex: 1; margin-left: 5px;">Xで布教</button>
+            </div>
+            <!-- 閉じるボタンを追加 -->
             <button id="close-modal"
-                style="background: #f44336; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">閉じる</button>
+                style="background: #666; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-top: 10px;">閉じる</button>
         </div>
     </div>
+
+
 
     <div id="tab-area">
         <div class="tab" data-floor="1F">
@@ -1018,8 +1027,13 @@
 
     <script>
         let isZooming = false;
-        let boothInfo = {}
-        // イベント日時設定（例: 2025年12月20日）
+        let isPanning = false;
+        let isDragging = false;
+
+        let startClickX, startClickY;
+        let clickedBoothId = null;
+        let boothInfo = {};
+        // イベント日時設定
         const EVENT_DATE = "2025-11-23";
         const OPEN_TIME = "12:00";
         const CLOSE_TIME = "17:00";
@@ -1027,7 +1041,33 @@
         let boothState = JSON.parse(localStorage.getItem('boothState')) || {};
         // タブの状態を管理
         const activeTab = localStorage.getItem('activeTab') || '1F';
-        // ブースのクリック処理
+        // マークをすべてリセットする関数
+        function resetAllMarks() {
+            boothState = {};
+            localStorage.setItem('boothState', JSON.stringify(boothState));
+            document.querySelectorAll('.booth').forEach(booth => {
+                const id = booth.dataset.id;
+                booth.dataset.status = '0';
+                booth.textContent = id.replace(/[A-Za-zあ-ん]/, '');
+            });
+            updateStats();
+        }
+
+        // Xで布教ボタンのクリックイベント
+        document.getElementById('tweet-app').addEventListener('click', function () {
+            const tweetText = encodeURIComponent('文学フリマ東京41のマップアプリが便利！ ダウンロード不要 #文学フリマ東京41 https://bft41.poet.blue');
+            window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
+        });
+
+        // マークをすべてリセットボタンのクリックイベント
+        document.getElementById('reset-marks').addEventListener('click', function () {
+            if (confirm('本当にすべてのマークをリセットしますか？')) {
+                resetAllMarks();
+                alert('マークをリセットしました。');
+            }
+        });
+
+        // ブースの状態を切り替える関数
         function toggleBooth(id) {
             const current = boothState[id] || 0;
             const next = (current + 1) % 3;
@@ -1042,16 +1082,13 @@
             const el = document.querySelector(`.booth[data-id="${id}"]`);
             if (el) {
                 el.dataset.status = status;
-                // ピンク・緑の場合は常にフル表記
                 if (status == 1 || status == 2) {
                     el.textContent = id;
                 } else {
-                    // 通常時は数字のみ
                     el.textContent = id.replace(/[A-Za-zあ-ん]/, '');
                 }
             }
         }
-
 
         // 空のセルを生成
         function createEmptyCell() {
@@ -1061,35 +1098,29 @@
             cell.style.height = '40px';
             return cell;
         }
-        // ブースを生成する関数内で、イベントリスナーを追加
+
+        // ブースを生成
         function createBooth(id) {
             const booth = document.createElement('div');
             booth.className = 'booth';
             booth.dataset.id = id;
             booth.dataset.status = boothState[id] || '0';
-
-            // ブース情報があれば属性を設定
             if (boothInfo[id]) {
                 booth.dataset.mainGenre = boothInfo[id].genre[0] || "その他";
                 booth.dataset.subGenre = boothInfo[id].genre.slice(1).join(',') || "その他";
                 booth.dataset.genre = boothInfo[id].genre.join(',');
                 booth.dataset.name = boothInfo[id].name;
             } else {
-                // ブース情報がなくてもデフォルト値を設定
                 booth.dataset.mainGenre = "その他";
                 booth.dataset.subGenre = "その他";
                 booth.dataset.genre = "";
                 booth.dataset.name = id;
             }
-
-            // 初期表示
             if (boothState[id] == 1 || boothState[id] == 2) {
                 booth.textContent = id;
             } else {
                 booth.textContent = id.replace(/[A-Za-zあ-ん]/, '');
             }
-
-            // ホバー時の表示
             booth.addEventListener('mouseover', () => {
                 booth.textContent = id;
             });
@@ -1100,52 +1131,43 @@
                     booth.textContent = id.replace(/[A-Za-zあ-ん]/, '');
                 }
             });
-
-            // クリック/タッチ時のモーダル表示
+            // クリックイベントを追加
             booth.addEventListener('click', (e) => {
-                if (!isZooming) {
-                    e.stopPropagation();
-                    showBoothModal(id);
-                }
+                e.stopPropagation();
+                showBoothModal(id);
             });
+            // タッチイベントを追加
             booth.addEventListener('touchend', (e) => {
-                if (!isZooming) {
-                    e.preventDefault();
-                    showBoothModal(id);
-                }
+                e.stopPropagation();
+                e.preventDefault();
+                showBoothModal(id);
             });
-
             return booth;
         }
+
 
         // ブースの行を生成
         function createBoothRow(container, start, end, direction, letter) {
             const blockRow = document.createElement('div');
             blockRow.className = `block-row ${direction}`;
-            // 範囲を決定
             const range = direction === 'reverse'
                 ? Array.from({ length: start - end + 1 }, (_, i) => start - i)
                 : Array.from({ length: end - start + 1 }, (_, i) => start + i);
             range.forEach(i => {
-                // 4桁の場合（例: 0102 → A01, A02）
                 if (i.toString().length === 4) {
-                    const first = i.toString().substring(0, 2);  // 01
-                    const second = i.toString().substring(2, 4); // 02
+                    const first = i.toString().substring(0, 2);
+                    const second = i.toString().substring(2, 4);
                     const id1 = `${letter}${first}`;
                     const id2 = `${letter}${second}`;
                     blockRow.appendChild(createBooth(id1));
                     blockRow.appendChild(createBooth(id2));
-                }
-                // 2桁の場合（例: 01 → A01）
-                else {
+                } else {
                     const id = `${letter}${i.toString().padStart(2, '0')}`;
                     blockRow.appendChild(createBooth(id));
                 }
             });
             container.appendChild(blockRow);
         }
-
-
 
         // X行のブースを生成
         function createXRow() {
@@ -1160,25 +1182,20 @@
             xContainer.appendChild(bigLetter);
             const xBottomRow = document.createElement('div');
             xBottomRow.className = 'x-bottom-row';
-            // X16～X13
             const group1 = document.createElement('div');
             group1.className = 'x-bottom-group';
             ['16', '15', '14', '13'].forEach(num => {
                 group1.appendChild(createBooth(`X${num}`));
             });
-            // 1個開ける
             const spacer1 = document.createElement('div');
             spacer1.className = 'x-bottom-spacer-1';
-            // X12～X09
             const group2 = document.createElement('div');
             group2.className = 'x-bottom-group';
             ['12', '11', '10', '09'].forEach(num => {
                 group2.appendChild(createBooth(`X${num}`));
             });
-            // 3個開ける
             const spacer3 = document.createElement('div');
             spacer3.className = 'x-bottom-spacer-3';
-            // X08～X01
             const group3 = document.createElement('div');
             group3.className = 'x-bottom-group';
             ['08', '07', '06', '05', '04', '03', '02', '01'].forEach(num => {
@@ -1193,65 +1210,50 @@
             xRow.appendChild(xContainer);
             return xRow;
         }
-        // 「ね」行の底部ブースを生成（X行と同じレイアウト）
+
+        // 「ね」行の底部ブースを生成
         function createNERow() {
             const neRow = document.createElement('div');
             neRow.className = 'island-row x-row';
-
             const neContainer = document.createElement('div');
             neContainer.className = 'island-container';
             neContainer.style.backgroundColor = 'var(--bg-bt-area)';
-
             const bigLetter = document.createElement('div');
             bigLetter.className = 'big-letter';
             bigLetter.textContent = 'ね';
             neContainer.appendChild(bigLetter);
-
             const neBottomRow = document.createElement('div');
             neBottomRow.className = 'x-bottom-row';
-
-            // ね12～ね09
             const group2 = document.createElement('div');
             group2.className = 'x-bottom-group';
             ['12', '11', '10', '09'].forEach(num => {
                 group2.appendChild(createBooth(`ね${num}`));
             });
-
-            // 3つあける
             const spacer3 = document.createElement('div');
             spacer3.className = 'x-bottom-spacer-3';
-            spacer3.style.width = '88px'; // 3つ分の幅
-
-            // ね08～ね05
+            spacer3.style.width = '88px';
             const group3 = document.createElement('div');
             group3.className = 'x-bottom-group';
             ['08', '07', '06', '05'].forEach(num => {
                 group3.appendChild(createBooth(`ね${num}`));
             });
-            // 3つあける
             const spacer4 = document.createElement('div');
             spacer4.className = 'x-bottom-spacer-3';
-            spacer4.style.width = '132px'; // 3つ分の幅
-
-            // ね08～ね05
+            spacer4.style.width = '132px';
             const group4 = document.createElement('div');
             group4.className = 'x-bottom-group';
             ['04', '03', '02', '01'].forEach(num => {
                 group4.appendChild(createBooth(`ね${num}`));
             });
-
             neBottomRow.appendChild(group2);
             neBottomRow.appendChild(spacer3);
             neBottomRow.appendChild(group3);
             neBottomRow.appendChild(spacer4);
             neBottomRow.appendChild(group4);
-
             neContainer.appendChild(neBottomRow);
             neRow.appendChild(neContainer);
-
             return neRow;
         }
-
 
         // 島コンテナを生成
         function createIslandContainer(letter, isHiragana = false) {
@@ -1262,7 +1264,6 @@
             leftBigLetter.className = 'big-letter';
             leftBigLetter.textContent = letter;
             leftContainer.appendChild(leftBigLetter);
-
             if (['U', 'V', 'W'].includes(letter)) {
                 const leftTopLeft = document.createElement('div');
                 leftTopLeft.className = 'block-container';
@@ -1287,9 +1288,7 @@
                 leftContainer.appendChild(leftIslandSectionTop);
                 leftContainer.appendChild(leftIslandSectionBottom);
                 return { left: leftContainer, right: null };
-            }
-            else if (['な', 'に', 'ぬ'].includes(letter)) {
-                // 「な」「に」「ぬ」行の処理
+            } else if (['な', 'に', 'ぬ'].includes(letter)) {
                 const leftTopLeft = document.createElement('div');
                 leftTopLeft.className = 'block-container';
                 createBoothRow(leftTopLeft, 24, 13, 'reverse', letter);
@@ -1352,7 +1351,6 @@
                 leftIslandSectionBottom.appendChild(leftBottomRight);
                 leftContainer.appendChild(leftIslandSectionTop);
                 leftContainer.appendChild(leftIslandSectionBottom);
-
                 const rightContainer = document.createElement('div');
                 rightContainer.className = 'island-container';
                 rightContainer.style.backgroundColor = 'var(--bg-bt-area)';
@@ -1360,7 +1358,6 @@
                 rightBigLetter.className = 'big-letter';
                 rightBigLetter.textContent = letter;
                 rightContainer.appendChild(rightBigLetter);
-
                 const rightTopLeft = document.createElement('div');
                 rightTopLeft.className = 'block-container';
                 if (letter === 'A') {
@@ -1409,10 +1406,10 @@
                 rightIslandSectionBottom.appendChild(rightBottomRight);
                 rightContainer.appendChild(rightIslandSectionTop);
                 rightContainer.appendChild(rightIslandSectionBottom);
-
                 return { left: leftContainer, right: rightContainer };
             }
         }
+
         // タイマー機能
         function startTimer() {
             const timerEl = document.getElementById('timer-display');
@@ -1450,6 +1447,7 @@
             setInterval(update, 1000);
             update();
         }
+
         // ブース情報モーダル表示
         async function showBoothModal(boothId) {
             try {
@@ -1459,20 +1457,13 @@
                     const idEl = document.getElementById('booth-modal-id');
                     const nameLink = document.getElementById('booth-modal-name-link');
                     const genreEl = document.getElementById('booth-modal-genre');
-
-                    idEl.textContent = boothId; // ブース番号を大きく表示
+                    idEl.textContent = boothId;
                     nameLink.textContent = info.name;
                     nameLink.href = info.url;
-
-                    // ジャンル表示にジャンルカラーを反映
                     genreEl.textContent = info.genre.join(' / ');
                     genreEl.style.backgroundColor = getGenreColor(info.genre[0], info.genre.slice(1).join(','));
-                    genreEl.style.color = "white"; // 文字色を白に固定
-
-
+                    genreEl.style.color = "white";
                     modal.style.display = 'flex';
-
-                    // 「行きたい」「訪問済」ボタンのイベントリスナー
                     document.getElementById('booth-modal-want-to-go').onclick = () => {
                         toggleBooth(boothId);
                         updateBoothVisually(boothId, 1);
@@ -1493,8 +1484,8 @@
         }
 
 
+        // ジャンルカラーを取得
         function getGenreColor(mainGenre, subGenre) {
-            // メインジャンルごとのデフォルトカラー
             const mainGenreColors = {
                 "小説": "#87CEEB",
                 "詩歌": "#FFD700",
@@ -1502,7 +1493,6 @@
                 "ノンフィクション": "#DDA0DD",
                 "その他": "#808080"
             };
-            // サブジャンルごとのカラー（CSSから抜粋）
             const subGenreColors = {
                 "SF": "#87CEEB",
                 "BL": "#FFB6C1",
@@ -1524,26 +1514,15 @@
                 "インタビュー": "#F0E6FF",
                 "旅行記": "#E6D3FF"
             };
-            // サブジャンルが指定されている場合はサブジャンルのカラーを優先
             for (const [key, color] of Object.entries(subGenreColors)) {
                 if (subGenre.includes(key)) {
                     return color;
                 }
             }
-            // メインジャンルのカラーを返す
             return mainGenreColors[mainGenre] || "#808080";
         }
 
-
-        // モーダル外側タップで閉じる
-        document.getElementById('booth-modal').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) {
-                document.getElementById('booth-modal').style.display = 'none';
-            }
-        });
-
-
-        // booth.jsonを読み込む関数
+        // booth.jsonを読み込む
         async function loadBoothInfo() {
             try {
                 const response = await fetch('booth.json');
@@ -1558,27 +1537,23 @@
             }
         }
 
-        // ブースのデータ属性を更新する関数
-        function updateBoothAttributes() {
-            document.querySelectorAll('.booth').forEach(booth => {
-                const id = booth.dataset.id;
-                if (boothInfo[id]) {
-                    booth.dataset.mainGenre = boothInfo[id].genre[0] || "その他";
-                    booth.dataset.subGenre = boothInfo[id].genre.slice(1).join(',') || "その他";
-                    booth.dataset.genre = boothInfo[id].genre.join(',');
-                    booth.dataset.name = boothInfo[id].name;
-                }
-            });
+        // 集計エリアの初期化
+        function updateStats() {
+            const booths1F = document.querySelectorAll('#map-container-1F .booth');
+            const booths4F = document.querySelectorAll('#map-container-4F .booth');
+            const wantToGo1F = Array.from(booths1F).filter(booth => booth.dataset.status == 1).length;
+            const visited1F = Array.from(booths1F).filter(booth => booth.dataset.status == 2).length;
+            const wantToGo4F = Array.from(booths4F).filter(booth => booth.dataset.status == 1).length;
+            const visited4F = Array.from(booths4F).filter(booth => booth.dataset.status == 2).length;
+            document.querySelector('.count[data-floor="1F"][data-status="1"]').textContent = wantToGo1F;
+            document.querySelector('.count[data-floor="1F"][data-status="2"]').textContent = visited1F;
+            document.querySelector('.count[data-floor="4F"][data-status="1"]').textContent = wantToGo4F;
+            document.querySelector('.count[data-floor="4F"][data-status="2"]').textContent = visited4F;
         }
-
 
         // 初期化
         window.onload = async function () {
-
-
             await loadBoothInfo();
-
-            // ブース情報を反映
             document.querySelectorAll('.booth').forEach(booth => {
                 const id = booth.dataset.id;
                 if (boothInfo[id]) {
@@ -1590,7 +1565,6 @@
             });
             const islandsContainer1F = document.getElementById('islands-container-1F');
             const islandsContainer4F = document.getElementById('islands-container-4F');
-            // アルファベット行を追加
             const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W'];
             letters.forEach(letter => {
                 const islandRow = document.createElement('div');
@@ -1600,7 +1574,6 @@
                 if (rightIsland) {
                     islandRow.appendChild(rightIsland);
                 }
-                // U/V/W行の右側に試し読みコーナーを追加
                 if (['U', 'V', 'W'].includes(letter)) {
                     const readingArea = document.createElement('div');
                     readingArea.className = 'reading-area';
@@ -1611,12 +1584,7 @@
                 }
                 islandsContainer1F.appendChild(islandRow);
             });
-            // X行を追加
             islandsContainer1F.appendChild(createXRow());
-            // 「ね」行の底部ブースを追加
-
-
-            // ひらがな行を追加（アルファベットをひらがなに置換）
             const hiraganaLetters = ['あ', 'い', 'う', 'え', 'お', 'か', 'き', 'く', 'け', 'こ', 'さ', 'し', 'す', 'せ', 'そ', 'た', 'ち', 'つ', 'て', 'と', 'な', 'に', 'ぬ', 'ね'];
             letters.forEach((letter, index) => {
                 if (index < hiraganaLetters.length) {
@@ -1624,16 +1592,12 @@
                     const islandRow = document.createElement('div');
                     islandRow.className = 'island-row';
                     const { left: leftIsland, right: rightIsland } = createIslandContainer(hiraganaLetter, true);
-
-                    // 左側のブースのIDをひらがなに置換
                     leftIsland.querySelectorAll('.booth').forEach(booth => {
                         const id = booth.dataset.id;
                         if (id) {
                             booth.dataset.id = id.replace(letter, hiraganaLetter);
                         }
                     });
-
-                    // 右側のブースが存在する場合のみ処理
                     if (rightIsland && !['な', 'に', 'ぬ'].includes(hiraganaLetter)) {
                         rightIsland.querySelectorAll('.booth').forEach(booth => {
                             const id = booth.dataset.id;
@@ -1641,17 +1605,12 @@
                                 booth.dataset.id = id.replace(letter, hiraganaLetter);
                             }
                         });
-                        islandRow.appendChild(rightIsland); // 右の島を追加
+                        islandRow.appendChild(rightIsland);
                     }
-
-                    // 左右の島を正しく配置（23を含む島が左、01を含む島が右）
                     islandRow.appendChild(leftIsland);
                     if (rightIsland && !['な', 'に', 'ぬ'].includes(hiraganaLetter)) {
-                        islandRow.appendChild(rightIsland); // 右の島を右に配置
+                        islandRow.appendChild(rightIsland);
                     }
-
-
-                    // U/V/W行の右側に試し読みコーナーを追加
                     if (['U', 'V', 'W'].includes(letter)) {
                         const readingArea = document.createElement('div');
                         readingArea.className = 'reading-area';
@@ -1660,19 +1619,12 @@
                         }
                         islandRow.appendChild(readingArea);
                     }
-
                     islandsContainer4F.appendChild(islandRow);
-                    // 「ぬ」行の場合、その下に「ね」行の底部ブースを追加
                     if (hiraganaLetter === 'ぬ') {
-                        islandsContainer4F.appendChild(islandRow);
                         islandsContainer4F.appendChild(createNERow());
-                    } else {
-                        islandsContainer4F.appendChild(islandRow);
                     }
                 }
             });
-
-            // left-wallのboothにホバー・クリックイベントを追加
             document.querySelectorAll('.left-wall .booth').forEach(booth => {
                 const id = booth.dataset.id;
                 booth.dataset.status = boothState[id] || '0';
@@ -1688,13 +1640,9 @@
                     }
                 });
             });
-
-
-            // ページ読み込み時に状態を反映
             Object.entries(boothState).forEach(([id, status]) => {
                 updateBoothVisually(id, status);
             });
-            // タブ切り替え機能
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', function () {
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -1707,7 +1655,6 @@
                     localStorage.setItem('activeTab', floor);
                 });
             });
-            // タブの初期状態を設定
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
                 if (tab.dataset.floor === activeTab) {
@@ -1725,25 +1672,23 @@
                     document.getElementById('booth-modal').style.display = 'none';
                 }
             });
-
-            // タイマー開始
             startTimer();
             updateStats();
         };
-        // ズームとパンの機能を追加（PCとスマホ対応）
+
+        // ズームとパンの機能を追加
         document.addEventListener('DOMContentLoaded', function () {
             const mapContainers = [document.getElementById('map-container-1F'), document.getElementById('map-container-4F')];
             let scale = 1;
-            let isDragging = false;
-            let startX, startY;
-            let scrollLeft, scrollTop;
-            let touchStartDistance = 0;
-            let touchStartScale = 1;
-
             mapContainers.forEach(mapContainer => {
                 const scrollContainer = mapContainer.querySelector('.scroll-container');
+                let isDragging = false;
+                let startX, startY;
+                let scrollLeft, scrollTop;
+                let touchStartDistance = 0;
+                let touchStartScale = 1;
 
-                // --- PC用: マウスホイールでズーム ---
+                // マウスホイールでズーム
                 mapContainer.addEventListener('wheel', function (e) {
                     e.preventDefault();
                     const rect = mapContainer.getBoundingClientRect();
@@ -1759,8 +1704,9 @@
                     scrollContainer.style.top = `${-offsetY * scale + mouseY}px`;
                 }, { passive: false });
 
-                // --- PC用: マウスドラッグでパン ---
+                // マウスドラッグでパン
                 scrollContainer.addEventListener('mousedown', function (e) {
+                    isPanning = true;
                     isDragging = true;
                     startX = e.clientX;
                     startY = e.clientY;
@@ -1780,66 +1726,15 @@
                     scrollContainer.style.top = `${walkY}px`;
                 });
 
-                document.addEventListener('mouseup', function () {
+                document.addEventListener('mouseup', function (e) {
                     isDragging = false;
+                    isPanning = false;
                     scrollContainer.style.cursor = 'grab';
                 });
 
-                // --- スマホ用: タッチ操作 ---
-                scrollContainer.addEventListener('touchstart', function (e) {
-                    if (e.touches.length === 1) {
-                        isDragging = true;
-                        startX = e.touches[0].clientX;
-                        startY = e.touches[0].clientY;
-                        scrollLeft = parseFloat(scrollContainer.style.left) || 0;
-                        scrollTop = parseFloat(scrollContainer.style.top) || 0;
-                        e.preventDefault();
-                    } else if (e.touches.length === 2) {
-                        isZooming = true;
-                        touchStartDistance = Math.hypot(
-                            e.touches[0].pageX - e.touches[1].pageX,
-                            e.touches[0].pageY - e.touches[1].pageY
-                        );
-                        touchStartScale = scale;
-                        e.preventDefault();
-                    }
-                }, { passive: false });
-
-                scrollContainer.addEventListener('touchmove', function (e) {
-                    if (e.touches.length === 1 && isDragging) {
-                        const x = e.touches[0].clientX;
-                        const y = e.touches[0].clientY;
-                        const walkX = (x - startX) + scrollLeft;
-                        const walkY = (y - startY) + scrollTop;
-                        scrollContainer.style.left = `${walkX}px`;
-                        scrollContainer.style.top = `${walkY}px`;
-                        e.preventDefault();
-                    } else if (e.touches.length === 2) {
-                        const currentDistance = Math.hypot(
-                            e.touches[0].pageX - e.touches[1].pageX,
-                            e.touches[0].pageY - e.touches[1].pageY
-                        );
-                        const touchCenterX = (e.touches[0].pageX + e.touches[1].pageX) / 2 - mapContainer.getBoundingClientRect().left;
-                        const touchCenterY = (e.touches[0].pageY + e.touches[1].pageY) / 2 - mapContainer.getBoundingClientRect().top;
-                        const delta = currentDistance / touchStartDistance;
-                        zoom(touchCenterX, touchCenterY, delta);
-                        e.preventDefault();
-                    }
-                }, { passive: false });
-
-                // スマホ用: タッチ操作
-                scrollContainer.addEventListener('touchend', function (e) {
-                    isDragging = false;
-                    isZooming = false;
-                    scrollContainer.style.cursor = 'grab';
-                    // タッチ終了後、短時間だけタッチイベントを無効化
-                    setTimeout(() => {
-                        isZooming = false;
-                    }, 100);
-                }, { passive: false });
 
 
-                // --- ズーム処理（共通）---
+                // ズーム処理
                 function zoom(clientX, clientY, delta) {
                     const rect = mapContainer.getBoundingClientRect();
                     const mouseX = clientX - rect.left;
@@ -1854,34 +1749,98 @@
                 }
             });
         });
-        // 集計エリアの初期化
-        function updateStats() {
-            const booths1F = document.querySelectorAll('#map-container-1F .booth');
-            const booths4F = document.querySelectorAll('#map-container-4F .booth');
 
-            const wantToGo1F = Array.from(booths1F).filter(booth => booth.dataset.status == 1).length;
-            const visited1F = Array.from(booths1F).filter(booth => booth.dataset.status == 2).length;
-            const wantToGo4F = Array.from(booths4F).filter(booth => booth.dataset.status == 1).length;
-            const visited4F = Array.from(booths4F).filter(booth => booth.dataset.status == 2).length;
+        // ドキュメント全体の mouseup イベント
+        document.addEventListener('mouseup', (e) => {
+            if (isPanning) {
+                isPanning = false;
+                clickedBoothId = null;
+                return;
+            }
+            if (!clickedBoothId) return;
 
-            document.querySelector('.count[data-floor="1F"][data-status="1"]').textContent = wantToGo1F;
-            document.querySelector('.count[data-floor="1F"][data-status="2"]').textContent = visited1F;
-            document.querySelector('.count[data-floor="4F"][data-status="1"]').textContent = wantToGo4F;
-            document.querySelector('.count[data-floor="4F"][data-status="2"]').textContent = visited4F;
-        }
-
-
-        // ブースの表示を常に完全表記（ピンク・緑の場合）
-        function updateBoothVisually(id, status) {
-            const el = document.querySelector(`.booth[data-id="${id}"]`);
-            if (el) {
-                el.dataset.status = status;
-                if (status == 1 || status == 2) {
-                    el.textContent = id; // 常に完全表記
+            const distance = Math.sqrt(
+                Math.pow(e.clientX - startClickX, 2) +
+                Math.pow(e.clientY - startClickY, 2)
+            );
+            if (distance < 5) {
+                const booth = document.querySelector(`.booth[data-id="${clickedBoothId}"]`);
+                if (booth) {
+                    showBoothModal(clickedBoothId);
                 }
             }
-        }
+            clickedBoothId = null;
+        });
+        // マウスダウン時の処理（ブース）
+        document.querySelectorAll('.booth').forEach(booth => {
+            booth.addEventListener('mousedown', (e) => {
+                // パン操作中でない場合のみ記録
+                if (!isPanning) {
+                    clickedBoothId = booth.dataset.id;
+                    startClickX = e.clientX;
+                    startClickY = e.clientY;
+                } else {
+                    clickedBoothId = null;
+                }
+            });
+        });
 
+        // マウスダウン時の処理（スクロールコンテナ）
+        document.querySelectorAll('.scroll-container').forEach(container => {
+            container.addEventListener('mousedown', function (e) {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                scrollLeft = parseFloat(container.style.left) || 0;
+                scrollTop = parseFloat(container.style.top) || 0;
+                container.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+        });
+
+        // マウスムーブ時の処理
+        document.addEventListener('mousemove', function (e) {
+            if (isDragging) {
+                // マウスが動いたらパン操作中と判定
+                isPanning = true;
+                // ブースのクリックIDをクリア
+                clickedBoothId = null;
+            }
+        });
+
+        // マウスアップ時の処理
+        document.addEventListener('mouseup', function (e) {
+            if (isDragging) {
+                isDragging = false;
+                document.querySelectorAll('.scroll-container').forEach(container => {
+                    container.style.cursor = 'grab';
+                });
+            }
+
+            // パン操作中はモーダルを表示しない
+            if (isPanning) {
+                isPanning = false;
+                clickedBoothId = null;
+                return;
+            }
+
+            // パン操作中でない場合のみモーダル表示
+            if (clickedBoothId) {
+                const distance = Math.sqrt(
+                    Math.pow(e.clientX - startClickX, 2) +
+                    Math.pow(e.clientY - startClickY, 2)
+                );
+                if (distance < 5) {
+                    const booth = document.querySelector(`.booth[data-id="${clickedBoothId}"]`);
+                    if (booth) {
+                        showBoothModal(clickedBoothId);
+                    }
+                }
+            }
+
+            // フラグをリセット
+            clickedBoothId = null;
+        });
 
         // QRコード生成ライブラリの読み込み
         function loadQRCodeLibrary() {
@@ -1895,15 +1854,10 @@
 
         // 共有ボタンのクリックイベント
         document.getElementById('share-button').addEventListener('click', function () {
-            // boothState を圧縮してBase64エンコード
             const compressedData = LZString.compressToBase64(JSON.stringify(boothState));
             const shareUrl = `${window.location.origin}${window.location.pathname}#data=${compressedData}`;
-
-            // モーダル表示
             document.getElementById('share-modal').style.display = 'flex';
             document.getElementById('share-url').value = shareUrl;
-
-            // QRコード生成
             if (typeof QRCode !== 'undefined') {
                 document.getElementById('qrcode').innerHTML = '';
                 new QRCode(document.getElementById('qrcode'), {
@@ -1929,7 +1883,6 @@
                     const decompressedData = LZString.decompressFromBase64(compressedData);
                     if (decompressedData) {
                         boothState = JSON.parse(decompressedData);
-                        // ブースの状態を反映
                         Object.entries(boothState).forEach(([id, status]) => {
                             updateBoothVisually(id, status);
                         });
@@ -1940,8 +1893,8 @@
                 }
             }
         });
-
     </script>
+
 </body>
 
 </html>
