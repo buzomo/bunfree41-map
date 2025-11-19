@@ -1,0 +1,21 @@
+{
+    "name": "文学フリマ東京41 マップ",
+    "short_name": "文学フリマ41",
+    "description": "文学フリマ東京41の会場マップアプリ",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#333333",
+    "icons": [
+        {
+            "src": "icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

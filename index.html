@@ -4,11 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>文学フリマ東京41 マップ（A～X行 / あ～ね行）</title>
-    <link rel="icon"
-        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⏲%3C/text%3E%3C/svg%3E"
-        type="image/svg+xml">
+    <title>文学フリマ東京41 マップ</title>
+    <link rel="icon" type="image/png" href="icon-32x32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="icon-16x16.png" sizes="16x16">
     <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
+    <!-- マニフェストファイルのリンク -->
+    <link rel="manifest" href="/manifest.json">
+    <!-- iOS用のメタタグ -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="文学フリマ41">
+    <!-- アイコンのリンク -->
+    <link rel="apple-touch-icon" href="/icon-192x192.png">
+    <!-- テーマカラー -->
+    <meta name="theme-color" content="#333333">
 
     <style>
         :root {
@@ -72,11 +81,21 @@
             align-items: center;
         }
 
+        /* タブのステータス部分をタップ可能に見せる */
         .tab-stats {
             font-size: 12px;
             margin-top: 3px;
             display: flex;
             gap: 8px;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .tab-stats:hover {
+            background: rgba(255, 255, 255, 0.4);
         }
 
         .want-to-go {
@@ -744,6 +763,60 @@
             text-decoration: underline !important;
             cursor: pointer;
         }
+
+        .wishlist-section {
+            margin-bottom: 15px;
+        }
+
+        .booth-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .booth-list li {
+            padding: 8px;
+            margin: 4px 0;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .booth-list li:hover {
+            background: #e0e0e0;
+        }
+
+        /* リストコンテナのアニメーション */
+        #wishlist-container {
+            height: 0;
+            /* 初期高さを0に */
+            overflow-y: auto;
+            background: #f0f0f0;
+            padding: 0 10px;
+            /* 初期パディングを横方向のみ */
+            box-sizing: border-box;
+            border-bottom: 1px solid #ccc;
+            display: none;
+            position: relative;
+            opacity: 0;
+            transition: height 0.5s ease, opacity 0.5s ease, padding 0.5s ease;
+        }
+
+        #wishlist-container.show {
+            display: block;
+            height: 30vh;
+            /* 高さを30vhに */
+            opacity: 1;
+            padding: 10px;
+            /* パディングを復元 */
+        }
+
+        /* 検索モーダルのスタイル */
+        #search-modal ul li:hover {
+            background-color: #f0f0f0;
+        }
     </style>
 </head>
 
@@ -756,19 +829,44 @@
                 style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; padding: 0;">🎨</button>
             <span style="color: white; font-size: 10px; white-space: nowrap;">ジャンル色分</span>
         </div>
-        <div class="title" style="margin: 0 auto;">文学フリマ東京41 @東京ビックサイト</div>
+        <div class="title" style="margin: 0 auto;">文学フリマ東京41</div>
         <div id="timer-display" class="timer-text"></div>
         <div id="progress-container">
             <div id="progress-bar"></div>
         </div>
-        <div
-            style="position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; align-items: center; gap: 2px;">
-            <button id="share-button"
-                style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; padding: 0;">🔗</button>
-            <span style="color: white; font-size: 10px; white-space: nowrap;">スマホに送る</span>
+        <!-- ボタンエリアをflexで横並びに -->
+        <div style="position: absolute; right: 10px; top: 10px; display: flex; gap: 10px;">
+            <!-- 検索ボタン -->
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                <button id="search-button"
+                    style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; padding: 0;">🔍</button>
+                <span style="color: white; font-size: 10px; white-space: nowrap;">検索</span>
+            </div>
+            <!-- 共有ボタン -->
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                <button id="share-button"
+                    style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; padding: 0;">🔗</button>
+                <span style="color: white; font-size: 10px; white-space: nowrap;">スマホに送る</span>
+            </div>
         </div>
     </div>
 
+    </div>
+
+    <!-- 検索モーダルを追加 -->
+    <div id="search-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1002; justify-content: center; align-items: center;">
+        <div
+            style="background: white; padding: 20px; border-radius: 8px; text-align: center; max-width: 300px; width: 90%;">
+            <h3 style="margin-top: 0;">ブース・サークル名検索</h3>
+            <input type="text" id="search-input" placeholder="ブース番号またはサークル名を入力"
+                style="width: 100%; margin: 10px 0; padding: 8px; box-sizing: border-box;">
+            <ul id="search-results-list"
+                style="list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; text-align: left;">
+            </ul>
+            <div id="search-results" style="display: none;"></div>
+        </div>
+    </div>
 
 
 
@@ -796,21 +894,46 @@
 
     <div id="tab-area">
         <div class="tab" data-floor="1F">
-            南１・２ホール(1F)
+            南１・２ホール(1F) ABC...
             <span class="tab-stats">
                 <span class="want-to-go">行きたい: <span class="count" data-floor="1F" data-status="1">0</span></span>
                 <span class="visited">訪問済: <span class="count" data-floor="1F" data-status="2">0</span></span>
             </span>
         </div>
         <div class="tab" data-floor="4F">
-            南・３・４ホール(4F)
+            南・３・４ホール(4F) あいう...
             <span class="tab-stats">
                 <span class="want-to-go">行きたい: <span class="count" data-floor="4F" data-status="1">0</span></span>
                 <span class="visited">訪問済: <span class="count" data-floor="4F" data-status="2">0</span></span>
             </span>
         </div>
     </div>
-
+    <!-- タブエリアの直下に追加 -->
+    <div id="wishlist-container"
+        style="display: none; height: 30vh; overflow-y: auto; background: #f0f0f0; padding: 10px; box-sizing: border-box;">
+        <div id="wishlist-1F" style="display: none;">
+            <h3>南１・２ホール(1F) のリスト</h3>
+            <div class="wishlist-section">
+                <h4>行きたい</h4>
+                <ul id="want-to-go-list-1F" class="booth-list"></ul>
+            </div>
+            <div class="wishlist-section">
+                <h4>訪問済</h4>
+                <ul id="visited-list-1F" class="booth-list"></ul>
+            </div>
+        </div>
+        <div id="wishlist-4F" style="display: none;">
+            <h3>南・３・４ホール(4F) のリスト</h3>
+            <div class="wishlist-section">
+                <h4>行きたい</h4>
+                <ul id="want-to-go-list-4F" class="booth-list"></ul>
+            </div>
+            <div class="wishlist-section">
+                <h4>訪問済</h4>
+                <ul id="visited-list-4F" class="booth-list"></ul>
+            </div>
+        </div>
+    </div>
 
     <div id="map-container-1F" class="active">
         <div class="scroll-container">
@@ -1098,9 +1221,64 @@
             const next = (current + 1) % 3;
             boothState[id] = next;
             updateBoothVisually(id, next);
+
+            // 隣接ブースを検出して同じサークル名ならマーク
+            const adjacentBooths = getAdjacentBooths(id);
+            adjacentBooths.forEach(adjId => {
+                if (boothInfo[id]?.name === boothInfo[adjId]?.name) {
+                    boothState[adjId] = next;
+                    updateBoothVisually(adjId, next);
+                }
+            });
+
             updateStats();
             localStorage.setItem('boothState', JSON.stringify(boothState));
         }
+        // ページ読み込み時に既存のマークをチェック
+        function checkExistingMarks() {
+            Object.entries(boothState).forEach(([id, status]) => {
+                if (status === 1 || status === 2) {
+                    const adjacentBooths = getAdjacentBooths(id);
+                    adjacentBooths.forEach(adjId => {
+                        if (boothInfo[id]?.name === boothInfo[adjId]?.name && !boothState[adjId]) {
+                            boothState[adjId] = status;
+                            updateBoothVisually(adjId, status);
+                        }
+                    });
+                }
+            });
+            updateStats();
+            localStorage.setItem('boothState', JSON.stringify(boothState));
+        }
+
+        function getAdjacentBooths(id) {
+            const adjacent = [];
+            const firstChar = id.charAt(0);
+            const num = parseInt(id.substring(1), 10);
+
+            // 左右のブース
+            adjacent.push(`${firstChar}${String(num - 1).padStart(2, '0')}`);
+            adjacent.push(`${firstChar}${String(num + 1).padStart(2, '0')}`);
+
+            // 上下のブース（アルファベットまたはひらがな）
+            let prevChar, nextChar;
+            if (/^[A-Za-z]$/.test(firstChar)) {
+                prevChar = String.fromCharCode(firstChar.charCodeAt(0) - 1);
+                nextChar = String.fromCharCode(firstChar.charCodeAt(0) + 1);
+            } else if (/^[あ-ん]$/.test(firstChar)) {
+                const hiraganaOrder = 'あいうえおかきくけこさしすせそたちつてとなにぬねの';
+                const index = hiraganaOrder.indexOf(firstChar);
+                prevChar = index > 0 ? hiraganaOrder[index - 1] : null;
+                nextChar = index < hiraganaOrder.length - 1 ? hiraganaOrder[index + 1] : null;
+            }
+
+            if (prevChar) adjacent.push(`${prevChar}${String(num).padStart(2, '0')}`);
+            if (nextChar) adjacent.push(`${nextChar}${String(num).padStart(2, '0')}`);
+
+            // 存在するブースのみを返す
+            return adjacent.filter(adjId => document.querySelector(`.booth[data-id="${adjId}"]`));
+        }
+
         // ブースの見た目を更新
         function updateBoothVisually(id, status) {
             const el = document.querySelector(`.booth[data-id="${id}"]`);
@@ -1113,6 +1291,7 @@
                 }
             }
         }
+
         // 空のセルを生成
         function createEmptyCell() {
             const cell = document.createElement('div');
@@ -1475,7 +1654,7 @@
                         document.getElementById('booth-modal').style.display = 'none';
                     };
                 } else {
-                    alert('ブース情報が見つかりません。');
+                    console.log('ブース情報が見つかりません。');
                 }
             } catch (error) {
                 return;
@@ -1643,6 +1822,16 @@
             Object.entries(boothState).forEach(([id, status]) => {
                 updateBoothVisually(id, status);
             });
+            // ステータス部分のクリックイベントを追加
+            document.querySelectorAll('.tab-stats').forEach(stats => {
+                stats.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    const floor = this.closest('.tab').dataset.floor;
+                    showWishlist(floor);
+                });
+            });
+
+            // タブのクリックイベントは通常の切り替えのみにする
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', function () {
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -1653,8 +1842,11 @@
                     });
                     document.getElementById(`map-container-${floor}`).classList.add('active');
                     localStorage.setItem('activeTab', floor);
+                    document.getElementById('wishlist-container').style.display = 'none';
                 });
             });
+
+
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
                 if (tab.dataset.floor === activeTab) {
@@ -1685,6 +1877,20 @@
             }
             // タッチ/ズーム/パン操作の初期化
             initTouchZoomPan();
+
+            // サービスワーカーの登録
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then((registration) => {
+                            registration.update(); // 更新を強制
+                        });
+                });
+            }
+            let deferredPrompt;
+
+            checkExistingMarks();
+
         };
         // タッチ/ズーム/パン操作の初期化
         function initTouchZoomPan() {
@@ -1862,6 +2068,218 @@
                 }
             }
         });
+
+        // タブのダブルクリックイベントを追加
+        document.querySelectorAll('.tab').forEach(tab => {
+            let lastClickTime = 0;
+            tab.addEventListener('click', function (e) {
+                const now = Date.now();
+                if (now - lastClickTime < 500) { // ダブルクリック
+                    e.preventDefault();
+                    e.stopPropagation(); // イベントの伝播を停止
+                    const floor = this.dataset.floor;
+                    showWishlist(floor);
+                    return; // ここで処理を終了
+                }
+                lastClickTime = now;
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                const floor = this.dataset.floor;
+                document.querySelectorAll('#map-container-1F, #map-container-4F').forEach(container => {
+                    container.classList.remove('active');
+                });
+                document.getElementById(`map-container-${floor}`).classList.add('active');
+                localStorage.setItem('activeTab', floor);
+                document.getElementById('wishlist-container').style.display = 'none';
+            });
+        });
+
+        function showWishlist(floor) {
+            const wishlistContainer = document.getElementById('wishlist-container');
+            // 該当フロアのリストを表示
+            document.querySelectorAll(`#wishlist-${floor}`).forEach(el => {
+                el.style.display = 'block';
+            });
+            // 非表示のリストを隠す
+            document.querySelectorAll(`#wishlist-${floor === '1F' ? '4F' : '1F'}`).forEach(el => {
+                el.style.display = 'none';
+            });
+            // リストを更新
+            updateWishlist(floor);
+            // アニメーションを適用
+            wishlistContainer.style.display = 'block';
+            setTimeout(() => {
+                wishlistContainer.classList.add('show');
+            }, 10);
+        }
+
+
+        // リストの外をタップすると閉じる
+        document.addEventListener('click', function (e) {
+            const wishlistContainer = document.getElementById('wishlist-container');
+            if (wishlistContainer.classList.contains('show') && !e.target.closest('#wishlist-container') && !e.target.closest('.tab-stats')) {
+                wishlistContainer.classList.remove('show');
+                setTimeout(() => {
+                    wishlistContainer.style.display = 'none';
+                }, 50); // アニメーション時間と合わせる
+            }
+        });
+
+
+        function updateWishlist(floor) {
+            const wantToGoList = document.getElementById(`want-to-go-list-${floor}`);
+            const visitedList = document.getElementById(`visited-list-${floor}`);
+            wantToGoList.innerHTML = '';
+            visitedList.innerHTML = '';
+
+            // 該当フロアのブースをフィルタリング
+            const booths = document.querySelectorAll(`#map-container-${floor} .booth`);
+            booths.forEach(booth => {
+                const id = booth.dataset.id;
+                const status = booth.dataset.status;
+                const name = booth.dataset.name || id;
+                const listItem = document.createElement('li');
+                listItem.textContent = `${id}: ${name}`;
+                listItem.dataset.id = id;
+                listItem.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    zoomToBooth(id, floor);
+                });
+                if (status === '1') {
+                    wantToGoList.appendChild(listItem);
+                } else if (status === '2') {
+                    visitedList.appendChild(listItem);
+                }
+            });
+        }
+
+        function zoomToBooth(boothId, floor) {
+            // フロアを自動判定（1F: A-W、4F: あ-ん）
+            const firstChar = boothId.charAt(0);
+            const is4F = /^[あ-ん]/.test(firstChar);
+            floor = is4F ? '4F' : '1F';
+
+            // 非アクティブなフロアの地図を非表示に
+            document.getElementById('map-container-1F').classList.remove('active');
+            document.getElementById('map-container-4F').classList.remove('active');
+            document.getElementById(`map-container-${floor}`).classList.add('active');
+
+            const booth = document.querySelector(`#map-container-${floor} .booth[data-id="${boothId}"]`);
+            if (!booth) {
+                console.error(`ブース ${boothId} が見つかりません`);
+                return;
+            }
+
+            const scrollContainer = document.querySelector(`#map-container-${floor} .scroll-container`);
+            const containerRect = scrollContainer.parentElement.getBoundingClientRect();
+            const boothRect = booth.getBoundingClientRect();
+
+            // 現在のズームレベルを取得
+            const currentTransform = window.getComputedStyle(scrollContainer).transform;
+            const matrix = currentTransform.match(/^matrix\((.+)\)$/);
+            const currentScale = matrix ? parseFloat(matrix[1].split(', ')[0]) : 1;
+
+            // 新しいズームレベル
+            const newScale = 2.0;
+
+            // ブースが中央に来るようにスクロール位置を計算
+            const containerCenterX = containerRect.width / 2;
+            const containerCenterY = containerRect.height / 2;
+            const boothCenterX = boothRect.left + boothRect.width / 2 - containerRect.left;
+            const boothCenterY = boothRect.top + boothRect.height / 2 - containerRect.top;
+
+            // 現在のスクロール位置を取得
+            const currentLeft = parseFloat(scrollContainer.style.left) || 0;
+            const currentTop = parseFloat(scrollContainer.style.top) || 0;
+
+            // 新しいスクロール位置を計算
+            const newLeft = (currentLeft + (containerCenterX / currentScale)) - (boothCenterX * newScale / currentScale);
+            const newTop = (currentTop + (containerCenterY / currentScale)) - (boothCenterY * newScale / currentScale);
+
+            // ズームとスクロールを適用
+            scrollContainer.style.transition = 'transform 0.3s ease, left 0.3s ease, top 0.3s ease';
+            scrollContainer.style.transform = `scale(${newScale})`;
+            scrollContainer.style.left = `${newLeft}px`;
+            scrollContainer.style.top = `${newTop}px`;
+
+            // ブースをハイライト
+            document.querySelectorAll('.booth').forEach(b => {
+                b.style.backgroundColor = '';
+                b.style.boxShadow = '';
+            });
+            if (!isGenreColorEnabled) {
+                booth.style.backgroundColor = 'yellow';
+            }
+            booth.style.boxShadow = '0 0 10px 5px rgba(255, 255, 0, 0.7)';
+            resetBoothStyles();
+
+            // タブをアクティブに
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`.tab[data-floor="${floor}"]`).classList.add('active');
+        }
+
+
+        // 検索モーダル表示/非表示
+        document.getElementById('search-button').addEventListener('click', function () {
+            document.getElementById('search-modal').style.display = 'flex';
+            document.getElementById('search-input').value = '';
+            document.getElementById('search-results-list').innerHTML = '';
+            document.getElementById('search-results').style.display = 'none';
+        });
+
+        // 検索モーダルの外側タップで閉じる
+        document.getElementById('search-modal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+
+        // 検索入力時の処理
+        document.getElementById('search-input').addEventListener('input', function () {
+            const query = this.value.trim().toLowerCase();
+            const resultsList = document.getElementById('search-results-list');
+            resultsList.innerHTML = '';
+            if (query.length === 0) {
+                document.getElementById('search-results').style.display = 'none';
+                return;
+            }
+
+            // ブース情報から検索
+            const matches = [];
+            Object.entries(boothInfo).forEach(([id, info]) => {
+                if (id.toLowerCase().includes(query) || (info.name && info.name.toLowerCase().includes(query))) {
+                    matches.push({ id, name: info.name || id });
+                }
+            });
+
+            if (matches.length > 0) {
+                matches.forEach(match => {
+                    const li = document.createElement('li');
+                    li.textContent = `${match.id}: ${match.name}`;
+                    li.dataset.id = match.id;
+                    li.style.padding = '8px';
+                    li.style.cursor = 'pointer';
+                    li.style.borderBottom = '1px solid #eee';
+                    li.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const firstChar = match.id.charAt(0);
+                        const floor = /^[あ-ん]/.test(firstChar) ? '4F' : '1F';
+                        zoomToBooth(match.id, floor);
+                        document.getElementById('search-modal').style.display = 'none';
+                    });
+
+                    resultsList.appendChild(li);
+                });
+                document.getElementById('search-results').style.display = 'block';
+            } else {
+                document.getElementById('search-results').style.display = 'none';
+            }
+        });
+
+
+
     </script>
 
 </body>
