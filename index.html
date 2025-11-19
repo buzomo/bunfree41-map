@@ -279,6 +279,34 @@
             margin-top: 584px;
         }
 
+        .ne01-4bx2 {
+            margin-top: 40px;
+        }
+
+        .ne02-4b {
+            margin-top: 64px;
+        }
+
+        .ne03-4b {
+            margin-top: 550px;
+        }
+
+        .ne04-4b {
+            margin-top: 700px;
+        }
+
+        .ne05-4b {
+            margin-top: 420px;
+        }
+
+        .ne06-4bx2 {
+            margin-top: 134px;
+        }
+
+        .bottom4 {
+            margin-top: 24px;
+        }
+
         .xc-block-with-letter {
             position: relative;
             margin-bottom: 20px;
@@ -311,14 +339,6 @@
                 overflow-x: unset;
             }
 
-            .content-wrapper {
-                flex-direction: column;
-            }
-
-            .left-wall {
-                width: 100%;
-                margin-bottom: 20px;
-            }
         }
 
         .reading-area {
@@ -337,6 +357,11 @@
             font-weight: bold;
             justify-items: center;
             align-items: center;
+        }
+
+        .scroll-container {
+            touch-action: none;
+            /* タッチ操作の競合を回避 */
         }
     </style>
 </head>
@@ -461,24 +486,9 @@
                     <!-- 左壁エリア -->
                     <div class="left-wall">
                         <!-- ね行の左壁ブース -->
-                        <div class="xc01-4bx3 xc-block-with-letter">
+                        <div class="ne01-4bx2 xc-block-with-letter">
                             <div class="xc-big-letter">ね</div>
-                            <div class="leftwall-block">
-                                <div class="block-column">
-                                    <div class="booth" data-id="ね52">52</div>
-                                    <div class="booth" data-id="ね51">51</div>
-                                    <div class="booth" data-id="ね50">50</div>
-                                    <div class="booth" data-id="ね49">49</div>
-                                </div>
-                            </div>
-                            <div class="leftwall-block">
-                                <div class="block-column">
-                                    <div class="booth" data-id="ね48">48</div>
-                                    <div class="booth" data-id="ね47">47</div>
-                                    <div class="booth" data-id="ね46">46</div>
-                                    <div class="booth" data-id="ね45">45</div>
-                                </div>
-                            </div>
+
                             <div class="leftwall-block">
                                 <div class="block-column">
                                     <div class="booth" data-id="ね44">44</div>
@@ -487,8 +497,49 @@
                                     <div class="booth" data-id="ね41">41</div>
                                 </div>
                             </div>
+                            <div class="leftwall-block">
+                                <div class="block-column bottom4">
+                                    <div class="booth" data-id="ね40">40</div>
+                                    <div class="booth" data-id="ね39">39</div>
+                                    <div class="booth" data-id="ね38">38</div>
+                                    <div class="booth" data-id="ね37">37</div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="xc05-4b xc-block-with-letter">
+                        <div class="ne02-4b xc-block-with-letter">
+                            <div class="xc-big-letter">ね</div>
+                            <div class="leftwall-block">
+                                <div class="block-column">
+                                    <div class="booth" data-id="ね36">36</div>
+                                    <div class="booth" data-id="ね35">35</div>
+                                    <div class="booth" data-id="ね34">34</div>
+                                    <div class="booth" data-id="ね33">33</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ne03-4b xc-block-with-letter">
+                            <div class="xc-big-letter">ね</div>
+                            <div class="leftwall-block">
+                                <div class="block-column">
+                                    <div class="booth" data-id="ね32">32</div>
+                                    <div class="booth" data-id="ね31">31</div>
+                                    <div class="booth" data-id="ね30">30</div>
+                                    <div class="booth" data-id="ね29">29</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ne04-4b xc-block-with-letter">
+                            <div class="xc-big-letter">ね</div>
+                            <div class="leftwall-block">
+                                <div class="block-column">
+                                    <div class="booth" data-id="ね28">28</div>
+                                    <div class="booth" data-id="ね27">27</div>
+                                    <div class="booth" data-id="ね26">26</div>
+                                    <div class="booth" data-id="ね25">25</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ne05-4b xc-block-with-letter">
                             <div class="xc-big-letter">ね</div>
                             <div class="leftwall-block">
                                 <div class="block-column">
@@ -496,6 +547,27 @@
                                     <div class="booth" data-id="ね23">23</div>
                                     <div class="booth" data-id="ね22">22</div>
                                     <div class="booth" data-id="ね21">21</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ne06-4bx2 xc-block-with-letter">
+                            <div class="xc-big-letter">ね</div>
+
+                            <div class="leftwall-block">
+                                <div class="block-column">
+                                    <div class="booth" data-id="ね20">20</div>
+                                    <div class="booth" data-id="ね19">19</div>
+                                    <div class="booth" data-id="ね18">18</div>
+                                    <div class="booth" data-id="ね17">17</div>
+                                </div>
+                            </div>
+                            <div class="leftwall-block">
+                                <div class="block-column bottom4">
+                                    <div class="booth" data-id="ね16">16</div>
+                                    <div class="booth" data-id="ね15">15</div>
+                                    <div class="booth" data-id="ね14">14</div>
+                                    <div class="booth" data-id="ね13">13</div>
                                 </div>
                             </div>
                         </div>
@@ -607,6 +679,66 @@
             xRow.appendChild(xContainer);
             return xRow;
         }
+        // 「ね」行の底部ブースを生成（X行と同じレイアウト）
+        function createNERow() {
+            const neRow = document.createElement('div');
+            neRow.className = 'island-row x-row';
+
+            const neContainer = document.createElement('div');
+            neContainer.className = 'island-container';
+            neContainer.style.backgroundColor = 'var(--bg-bt-area)';
+
+            const bigLetter = document.createElement('div');
+            bigLetter.className = 'big-letter';
+            bigLetter.textContent = 'ね';
+            neContainer.appendChild(bigLetter);
+
+            const neBottomRow = document.createElement('div');
+            neBottomRow.className = 'x-bottom-row';
+
+            // ね12～ね09
+            const group2 = document.createElement('div');
+            group2.className = 'x-bottom-group';
+            ['12', '11', '10', '09'].forEach(num => {
+                group2.appendChild(createBooth(`ね${num}`));
+            });
+
+            // 3つあける
+            const spacer3 = document.createElement('div');
+            spacer3.className = 'x-bottom-spacer-3';
+            spacer3.style.width = '88px'; // 3つ分の幅
+
+            // ね08～ね05
+            const group3 = document.createElement('div');
+            group3.className = 'x-bottom-group';
+            ['08', '07', '06', '05'].forEach(num => {
+                group3.appendChild(createBooth(`ね${num}`));
+            });
+            // 3つあける
+            const spacer4 = document.createElement('div');
+            spacer4.className = 'x-bottom-spacer-3';
+            spacer4.style.width = '132px'; // 3つ分の幅
+
+            // ね08～ね05
+            const group4 = document.createElement('div');
+            group4.className = 'x-bottom-group';
+            ['04', '03', '02', '01'].forEach(num => {
+                group4.appendChild(createBooth(`ね${num}`));
+            });
+
+            neBottomRow.appendChild(group2);
+            neBottomRow.appendChild(spacer3);
+            neBottomRow.appendChild(group3);
+            neBottomRow.appendChild(spacer4);
+            neBottomRow.appendChild(group4);
+
+            neContainer.appendChild(neBottomRow);
+            neRow.appendChild(neContainer);
+
+            return neRow;
+        }
+
+
         // 島コンテナを生成
         function createIslandContainer(letter, isHiragana = false) {
             const leftContainer = document.createElement('div');
@@ -831,6 +963,9 @@
             });
             // X行を追加
             islandsContainer1F.appendChild(createXRow());
+            // 「ね」行の底部ブースを追加
+
+
             // ひらがな行を追加（アルファベットをひらがなに置換）
             const hiraganaLetters = ['あ', 'い', 'う', 'え', 'お', 'か', 'き', 'く', 'け', 'こ', 'さ', 'し', 'す', 'せ', 'そ', 'た', 'ち', 'つ', 'て', 'と', 'な', 'に', 'ぬ', 'ね'];
             letters.forEach((letter, index) => {
@@ -877,6 +1012,13 @@
                     }
 
                     islandsContainer4F.appendChild(islandRow);
+                    // 「ぬ」行の場合、その下に「ね」行の底部ブースを追加
+                    if (hiraganaLetter === 'ぬ') {
+                        islandsContainer4F.appendChild(islandRow);
+                        islandsContainer4F.appendChild(createNERow());
+                    } else {
+                        islandsContainer4F.appendChild(islandRow);
+                    }
                 }
             });
 
@@ -932,6 +1074,7 @@
                 let startLeft, startTop;
                 let touchStartDistance = 0;
                 let touchStartScale = 1;
+
                 // マウスホイールでズーム（PC用）
                 mapContainer.addEventListener('wheel', function (e) {
                     e.preventDefault();
@@ -947,6 +1090,7 @@
                     scrollContainer.style.left = `${-offsetX * scale + mouseX}px`;
                     scrollContainer.style.top = `${-offsetY * scale + mouseY}px`;
                 }, { passive: false });
+
                 // マウスドラッグでパン（PC用）
                 scrollContainer.addEventListener('mousedown', function (e) {
                     isDragging = true;
@@ -957,6 +1101,7 @@
                     scrollContainer.style.cursor = 'grabbing';
                     e.preventDefault();
                 });
+
                 scrollContainer.addEventListener('mousemove', function (e) {
                     if (!isDragging) return;
                     const x = e.clientX;
@@ -966,10 +1111,12 @@
                     scrollContainer.style.left = `${walkX}px`;
                     scrollContainer.style.top = `${walkY}px`;
                 });
+
                 document.addEventListener('mouseup', function () {
                     isDragging = false;
                     scrollContainer.style.cursor = 'grab';
                 });
+
                 // タッチイベントでズーム（スマホ用）
                 mapContainer.addEventListener('touchstart', function (e) {
                     if (e.touches.length === 2) {
@@ -981,6 +1128,7 @@
                         touchStartScale = scale;
                     }
                 }, { passive: false });
+
                 mapContainer.addEventListener('touchmove', function (e) {
                     if (e.touches.length === 2) {
                         e.preventDefault();
@@ -1002,12 +1150,14 @@
                         scrollContainer.style.cursor = 'grabbing';
                     }
                 }, { passive: false });
+
                 mapContainer.addEventListener('touchend', function (e) {
                     if (e.touches.length < 2) {
                         isDragging = false;
                         scrollContainer.style.cursor = 'grab';
                     }
                 }, { passive: false });
+
                 // ズーム処理（共通）
                 function zoom(clientX, clientY, delta) {
                     const rect = mapContainer.getBoundingClientRect();
@@ -1023,6 +1173,7 @@
                 }
             });
         });
+
     </script>
 </body>
 
