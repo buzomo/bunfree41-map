@@ -745,7 +745,13 @@
 <body>
     <!-- タイトル、タイマー、共有ボタン -->
     <div id="timer-area" style="position: relative;">
-        <div class="title">文学フリマ東京41 @東京ビックサイト</div>
+        <div
+            style="position: absolute; left: 10px; top: 10px; display: flex; flex-direction: column; align-items: center; gap: 2px;">
+            <button id="toggle-genre-colors"
+                style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; padding: 0;">🎨</button>
+            <span style="color: white; font-size: 10px; white-space: nowrap;">ジャンル色分</span>
+        </div>
+        <div class="title" style="margin: 0 auto;">文学フリマ東京41 @東京ビックサイト</div>
         <div id="timer-display" class="timer-text"></div>
         <div id="progress-container">
             <div id="progress-bar"></div>
@@ -757,6 +763,7 @@
             <span style="color: white; font-size: 10px; white-space: nowrap;">スマホに送る</span>
         </div>
     </div>
+
 
 
 
@@ -1017,7 +1024,10 @@
                     style="background: var(--pink-highlight); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">行きたい</button>
                 <button id="booth-modal-visited"
                     style="background: var(--green-visited); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">訪問済</button>
+                <button id="booth-modal-unset"
+                    style="background: #ccc; color: #333; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">未指定</button>
             </div>
+
         </div>
     </div>
 
@@ -1050,6 +1060,25 @@
             });
             updateStats();
         }
+        // ジャンル色分けの状態を管理
+        let isGenreColorEnabled = localStorage.getItem('isGenreColorEnabled') === 'true' || false;
+
+        // ジャンル色分けをトグルする関数
+        function toggleGenreColors() {
+            isGenreColorEnabled = !isGenreColorEnabled;
+            localStorage.setItem('isGenreColorEnabled', isGenreColorEnabled);
+            if (isGenreColorEnabled) {
+                // ジャンル色分けを有効化（CSSのデフォルトスタイルを適用）
+                document.querySelectorAll('.booth').forEach(booth => {
+                    booth.style.backgroundColor = '';
+                    booth.style.borderColor = '';
+                });
+            } else {
+                // ジャンル色分けを無効化（白黒に統一）
+                resetBoothStyles();
+            }
+        }
+
 
         // Xで布教ボタンのクリックイベント
         document.getElementById('tweet-app').addEventListener('click', function () {
@@ -1120,7 +1149,7 @@
             } else {
                 booth.textContent = id.replace(/[A-Za-zあ-ん]/, '');
             }
-            booth.addEventListener('contextmenu', (e) => {
+            booth.addEventListener('click', (e) => {
                 e.preventDefault();
                 showBoothModal(id);
             }, { capture: true });
@@ -1468,6 +1497,12 @@
                         updateBoothVisually(boothId, 2);
                         modal.style.display = 'none';
                     };
+                    document.getElementById('booth-modal-unset').onclick = () => {
+                        toggleBooth(boothId);
+                        updateBoothVisually(boothId, 0);
+                        document.getElementById('booth-modal').style.display = 'none';
+                    };
+
                 } else {
                     alert('ブース情報が見つかりません。');
                 }
@@ -1529,6 +1564,16 @@
                 boothInfo = {};
             }
         }
+        // ブースの背景色とボーダーを白背景・黒ボーダーに統一する関数
+        function resetBoothStyles() {
+            document.querySelectorAll('.booth').forEach(booth => {
+                booth.style.backgroundColor = 'white';
+                booth.style.borderColor = 'black';
+                booth.style.borderWidth = '1px';
+                booth.style.borderStyle = 'solid';
+            });
+        }
+
 
         // 集計エリアの初期化
         function updateStats() {
@@ -1547,6 +1592,7 @@
         // 初期化
         window.onload = async function () {
             await loadBoothInfo();
+
             document.querySelectorAll('.booth').forEach(booth => {
                 const id = booth.dataset.id;
                 if (boothInfo[id]) {
@@ -1556,6 +1602,7 @@
                     booth.dataset.name = boothInfo[id].name;
                 }
             });
+
             const islandsContainer1F = document.getElementById('islands-container-1F');
             const islandsContainer4F = document.getElementById('islands-container-4F');
             const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W'];
@@ -1673,6 +1720,14 @@
             });
             startTimer();
             updateStats();
+            // ジャンル色分けボタンのイベントリスナー
+            document.getElementById('toggle-genre-colors').addEventListener('click', toggleGenreColors);
+
+            // ページ読み込み時にジャンル色分けの状態を復元
+            if (!isGenreColorEnabled) {
+                resetBoothStyles();
+            }
+
         };
         document.addEventListener('DOMContentLoaded', function () {
             const mapContainers = [document.getElementById('map-container-1F'), document.getElementById('map-container-4F')];
@@ -1691,7 +1746,7 @@
                     const rect = mapContainer.getBoundingClientRect();
                     const mouseX = e.clientX - rect.left;
                     const mouseY = e.clientY - rect.top;
-                    const delta = e.deltaY * -0.01;
+                    const delta = e.deltaY * -0.1;
                     const newScale = Math.max(0.7, Math.min(3, scale + delta));
                     const offsetX = (mouseX - scrollContainer.offsetWidth * (1 - scale) / 2) / scale;
                     const offsetY = (mouseY - scrollContainer.offsetHeight * (1 - scale) / 2) / scale;
