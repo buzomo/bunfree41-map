@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>文学フリマ東京41 マップ（A～X行 / あ～ね行）</title>
     <link rel="icon"
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⏲%3C/text%3E%3C/svg%3E"
@@ -385,7 +385,7 @@
         }
 
         .scroll-container {
-            touch-action: none;
+            touch-action: manipulation;
             /* タッチ操作の競合を回避 */
         }
 
@@ -1120,6 +1120,10 @@
             } else {
                 booth.textContent = id.replace(/[A-Za-zあ-ん]/, '');
             }
+            booth.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                showBoothModal(id);
+            }, { capture: true });
             booth.addEventListener('mouseover', () => {
                 booth.textContent = id;
             });
@@ -1130,17 +1134,8 @@
                     booth.textContent = id.replace(/[A-Za-zあ-ん]/, '');
                 }
             });
-            // クリックイベントを追加
-            booth.addEventListener('click', (e) => {
-                e.stopPropagation();
-                showBoothModal(id);
-            });
-            // タッチイベントを追加
-            booth.addEventListener('touchend', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                showBoothModal(id);
-            });
+
+
             return booth;
         }
 
@@ -1529,7 +1524,6 @@
                     throw new Error('booth.jsonの読み込みに失敗しました');
                 }
                 boothInfo = await response.json();
-                console.log('ブース情報を読み込みました:', boothInfo);
             } catch (error) {
                 console.error('ブース情報の読み込みエラー:', error);
                 boothInfo = {};
@@ -1686,7 +1680,6 @@
             let isPanning = false;
             let isDragging = false;
 
-            console.log('DOMContentLoaded: Initializing...');
 
             mapContainers.forEach(mapContainer => {
                 const scrollContainer = mapContainer.querySelector('.scroll-container');
@@ -1708,9 +1701,12 @@
                     scrollContainer.style.top = `${-offsetY * scale + mouseY}px`;
                 }, { passive: false });
 
-                // タッチ開始
+                // タッチ開始時
                 scrollContainer.addEventListener('touchstart', function (e) {
-                    console.log('touchstart event fired');
+                    if (e.touches.length === 2) {
+                        // 2本指の場合はズーム操作と判断し、preventDefaultを呼ばない
+                        return;
+                    }
                     isDragging = true;
                     isPanning = true;
                     const touch = e.touches[0];
@@ -1719,18 +1715,16 @@
                     scrollLeft = parseFloat(scrollContainer.style.left) || 0;
                     scrollTop = parseFloat(scrollContainer.style.top) || 0;
                     scrollContainer.style.cursor = 'grabbing';
-
-                    // タッチ操作中はブースのクリックを物理的に無効化
                     booths.forEach(booth => {
                         booth.style.pointerEvents = 'none';
                     });
-                    e.preventDefault();
+                    // e.preventDefault(); // コメントアウトまたは条件付きで呼び出す
                 }, { passive: false });
+
 
                 // タッチムーブ
                 document.addEventListener('touchmove', function (e) {
                     if (!isDragging) return;
-                    console.log('touchmove event fired');
                     const touch = e.touches[0];
                     const x = touch.clientX;
                     const y = touch.clientY;
@@ -1743,7 +1737,6 @@
 
                 // タッチ終了
                 document.addEventListener('touchend', function (e) {
-                    console.log('touchend event fired');
                     isDragging = false;
                     scrollContainer.style.cursor = 'grab';
 
@@ -1753,13 +1746,11 @@
                             booth.style.pointerEvents = 'auto';
                         });
                         isPanning = false;
-                        console.log('Booth clicks re-enabled');
                     }, 300);
                 });
 
                 // マウスドラッグ開始
                 scrollContainer.addEventListener('mousedown', function (e) {
-                    console.log('mousedown event fired');
                     isDragging = true;
                     isPanning = true;
                     startX = e.clientX;
@@ -1794,20 +1785,7 @@
                 scrollContainer.style.top = '0';
             });
 
-            // ブースのクリックイベント
-            document.querySelectorAll('.booth').forEach(booth => {
-                booth.addEventListener('click', function (e) {
-                    if (isPanning) {
-                        console.log('Click prevented due to isPanning');
-                        e.preventDefault();
-                        e.stopPropagation();
-                        return;
-                    }
-                    const boothId = this.dataset.id;
-                    console.log('Showing booth modal for:', boothId);
-                    showBoothModal(boothId);
-                });
-            });
+
         });
 
         // ドキュメント全体の mouseup イベント
@@ -1906,9 +1884,7 @@
         function loadQRCodeLibrary() {
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
-            script.onload = function () {
-                console.log('QRCode library loaded');
-            };
+
             document.head.appendChild(script);
         }
 
