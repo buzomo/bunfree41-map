@@ -1,5 +1,5 @@
 // sw.js
-const CACHE_NAME = 'bft41-map-v5'; // バージョンを更新
+const CACHE_NAME = 'bft41-map-v6'; // バージョンを更新
 const urlsToCache = [
   '/',
   '/index.html',
