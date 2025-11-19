@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -12,9 +13,9 @@
             --pink-highlight: #ff69b4;
             --green-visited: #2ecc71;
             --bg-blue: #e6f7ff;
-            --bg-a-area: #e3f2fd;
-            --bg-bt-area: #fff8e1;
+            --bg-bt-area: transparent;
         }
+
         body {
             font-family: "Helvetica Neue", Arial, sans-serif;
             margin: 0;
@@ -24,6 +25,7 @@
             flex-direction: column;
             overflow: hidden;
         }
+
         #timer-area {
             background: #333;
             color: white;
@@ -31,13 +33,27 @@
             text-align: center;
             flex-shrink: 0;
         }
+
         #map-container {
             flex-grow: 1;
-            overflow: auto;
+            overflow: hidden;
             background: var(--bg-blue);
             padding: 20px;
             box-sizing: border-box;
         }
+
+        .scroll-container {
+            display: flex;
+            overflow-x: auto;
+            height: 100%;
+            width: 100%;
+        }
+
+        .content-wrapper {
+            display: flex;
+            min-width: fit-content;
+        }
+
         .big-letter {
             position: absolute;
             left: 50%;
@@ -46,45 +62,66 @@
             font-size: 120px;
             font-weight: bold;
             color: #333;
-            z-index: 2;
+            z-index: 4;
             opacity: 0.3;
+            pointer-events: none;
         }
+
         .island-row {
             display: flex;
             align-items: flex-start;
             margin-bottom: 8px;
             position: relative;
             width: 100%;
+            justify-content: space-between;
         }
+
+        .island-row.x-row {
+            width: 50%;
+            justify-content: center;
+            left: 24px;
+            margin-top: 29px;
+        }
+
         .island-container {
             display: flex;
             flex-direction: column;
             padding: 2px;
             border-radius: 8px;
             position: relative;
-            width: 40%;
             box-sizing: border-box;
-            padding-left: 2%;
+            margin: 7px 20px 12px 0;
         }
+
         .island-section {
             display: flex;
             margin-bottom: 10px;
             align-items: center;
             justify-content: normal;
         }
+
         .block-container {
-            background-color: rgba(255, 255, 255, 0.3);
+            background-color: transparent;
             padding: 2px;
             border-radius: 4px;
             margin-right: 5px;
         }
+
         .block-row {
             display: flex;
             gap: 2px;
         }
+
         .block-row.reverse {
             flex-direction: row;
         }
+
+        .block-column {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
         .booth {
             width: 44px;
             height: 40px;
@@ -97,80 +134,258 @@
             align-items: center;
             cursor: pointer;
             user-select: none;
+            position: relative;
+            z-index: 3;
         }
+
         .booth.empty {
             background-color: transparent;
             border: none;
             cursor: default;
         }
+
         .booth[data-status="1"] {
             background-color: var(--pink-highlight);
             color: white;
             border-color: var(--pink-highlight);
         }
+
         .booth[data-status="2"] {
             background-color: var(--green-visited);
             color: white;
             border-color: var(--green-visited);
         }
-        .reading-corner {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: rgba(255, 105, 180, 0.7);
-            border: 2px solid #ff69b4;
-            padding: 10px;
-            border-radius: 8px;
-            color: white;
-            font-weight: bold;
-            text-align: center;
-            width: 120px;
-            font-size: 12px;
-        }
-        .x-island {
-            width: 100%;
-            display: flex;
-            margin-top: 20px;
-        }
-        .leftwall-container {
-            display: flex;
-            flex-direction: column;
-            margin-right: 20px;
-            align-items: flex-start;
-        }
-        .leftwall-block {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 10px;
+
+        .left-wall {
             background-color: rgba(255, 255, 255, 0.3);
-            padding: 2px;
+            padding: 10px;
             border-radius: 4px;
-        }
-        .main-area {
-            flex-grow: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
+            box-sizing: border-box;
+            flex-shrink: 0;
+            width: 80px;
+            height: fit-content;
+            margin-right: 100px;
         }
-        .top-row {
-            display: flex;
-            gap: 10px;
+
+        .leftwall-block {
+            background-color: rgba(255, 255, 255, 0.3);
+            padding: 4px;
+            border-radius: 4px;
             margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
         }
-        .bottom-row {
+
+        .x-main-content {
+            flex-grow: 1;
+            overflow: hidden;
             display: flex;
+            box-sizing: border-box;
+            padding: 0;
+            min-width: 0;
+            height: 100%;
+        }
+
+        .islands-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-width: fit-content;
+            padding: 0 10px;
+        }
+
+        .x-bottom-row {
+            display: flex;
+            gap: 2px;
             justify-content: center;
             margin-top: 20px;
+            width: 100%;
+        }
+
+        .x-bottom-group {
+            display: flex;
+            gap: 2px;
+        }
+
+        .x-bottom-spacer-1 {
+            width: 44px;
+        }
+
+        .x-bottom-spacer-3 {
+            width: 132px;
+        }
+
+        .xc01-4bx3 {
+            margin-top: 20px;
+        }
+
+        .xc02-4b {
+            margin-top: 144px;
+        }
+
+        .xc03-4b {
+            margin-top: 400px;
+        }
+
+        .xc04-4bx3 {
+            margin-top: 360px;
+        }
+
+        .xc05-4b {
+            margin-top: 584px;
+        }
+
+        .xc-block-with-letter {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .xc-big-letter {
+            position: absolute;
+            left: 1px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 87px;
+            font-weight: bold;
+            color: #333;
+            z-index: 4;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .xc01-4bx3,
+        .xc02-4b,
+        .xc03-4b,
+        .xc04-4bx3,
+        .xc05-4b {
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            .scroll-container {
+                flex-direction: column;
+                overflow-x: unset;
+            }
+
+            .content-wrapper {
+                flex-direction: column;
+            }
+
+            .left-wall {
+                width: 100%;
+                margin-bottom: 20px;
+            }
         }
     </style>
 </head>
+
 <body>
     <div id="timer-area">
         <div class="title">文学フリマ東京41 @東京ビックサイト</div>
         <div id="timer-display" class="timer-text">A～X行表示中</div>
     </div>
-    <div id="map-container"></div>
+    <div id="map-container">
+        <div class="x-main-content">
+            <div class="scroll-container">
+                <div class="content-wrapper">
+                    <!-- 左壁エリア -->
+                    <div class="left-wall">
+                        <div class="xc01-4bx3 xc-block-with-letter">
+                            <div class="xc-big-letter">X</div>
+                            <div class="leftwall-block">
+                                <div class="block-column">
+                                    <div class="booth" data-id="X52">52</div>
+                                    <div class="booth" data-id="X51">51</div>
+                                    <div class="booth" data-id="X50">50</div>
+                                    <div class="booth" data-id="X49">49</div>
+                                </div>
+                            </div>
+                            <div class="leftwall-block">
+                                <div class="block-column">
+                                    <div class="booth" data-id="X48">48</div>
+                                    <div class="booth" data-id="X47">47</div>
+                                    <div class="booth" data-id="X46">46</div>
+                                    <div class="booth" data-id="X45">45</div>
+                                </div>
+                            </div>
+                            <div class="leftwall-block">
+                                <div class="block-column">
+                                    <div class="booth" data-id="X44">44</div>
+                                    <div class="booth" data-id="X43">43</div>
+                                    <div class="booth" data-id="X42">42</div>
+                                    <div class="booth" data-id="X41">41</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="xc02-4b xc-block-with-letter">
+                            <div class="xc-big-letter">X</div>
+                            <div class="leftwall-block">
+                                <div class="block-column">
+                                    <div class="booth" data-id="X40">40</div>
+                                    <div class="booth" data-id="X39">39</div>
+                                    <div class="booth" data-id="X38">38</div>
+                                    <div class="booth" data-id="X37">37</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="xc03-4b xc-block-with-letter">
+                            <div class="xc-big-letter">X</div>
+                            <div class="leftwall-block">
+                                <div class="block-column">
+                                    <div class="booth" data-id="X36">36</div>
+                                    <div class="booth" data-id="X35">35</div>
+                                    <div class="booth" data-id="X34">34</div>
+                                    <div class="booth" data-id="X33">33</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="xc04-4bx3 xc-block-with-letter">
+                            <div class="xc-big-letter">X</div>
+                            <div class="leftwall-block">
+                                <div class="block-column">
+                                    <div class="booth" data-id="X32">32</div>
+                                    <div class="booth" data-id="X31">31</div>
+                                    <div class="booth" data-id="X30">30</div>
+                                    <div class="booth" data-id="X29">29</div>
+                                </div>
+                            </div>
+                            <div class="leftwall-block">
+                                <div class="block-column">
+                                    <div class="booth" data-id="X28">28</div>
+                                    <div class="booth" data-id="X27">27</div>
+                                    <div class="booth" data-id="X26">26</div>
+                                    <div class="booth" data-id="X25">25</div>
+                                </div>
+                            </div>
+                            <div class="leftwall-block">
+                                <div class="block-column">
+                                    <div class="booth" data-id="X20">20</div>
+                                    <div class="booth" data-id="X19">19</div>
+                                    <div class="booth" data-id="X18">18</div>
+                                    <div class="booth" data-id="X17">17</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="xc05-4b xc-block-with-letter">
+                            <div class="xc-big-letter">X</div>
+                            <div class="leftwall-block">
+                                <div class="block-column">
+                                    <div class="booth" data-id="X24">24</div>
+                                    <div class="booth" data-id="X23">23</div>
+                                    <div class="booth" data-id="X22">22</div>
+                                    <div class="booth" data-id="X21">21</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- メインコンテンツ -->
+                    <div class="islands-wrapper" id="islands-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
     <script>
         // ブースの状態を管理
         const boothState = {};
@@ -221,102 +436,73 @@
             container.appendChild(blockRow);
         }
         // X行のブースを生成
-        function createXIsland() {
-            const container = document.createElement('div');
-            container.className = 'x-island';
-
-            // 左の壁際のブース
-            const leftWallContainer = document.createElement('div');
-            leftWallContainer.className = 'leftwall-container';
-
-            // 4マスが3か所
-            const leftWallBlocks = [
-                { start: 40, end: 37, letter: 'X' },
-                { start: 36, end: 33, letter: 'X' },
-                { start: 20, end: 17, letter: 'X' }
-            ];
-            leftWallBlocks.forEach(block => {
-                const blockContainer = document.createElement('div');
-                blockContainer.className = 'leftwall-block';
-                createBoothRow(blockContainer, block.start, block.end, 'normal', block.letter);
-                leftWallContainer.appendChild(blockContainer);
+        function createXRow() {
+            const xRow = document.createElement('div');
+            xRow.className = 'island-row x-row';
+            const xContainer = document.createElement('div');
+            xContainer.className = 'island-container';
+            xContainer.style.backgroundColor = 'var(--bg-bt-area)';
+            const bigLetter = document.createElement('div');
+            bigLetter.className = 'big-letter';
+            bigLetter.textContent = 'X';
+            xContainer.appendChild(bigLetter);
+            const xBottomRow = document.createElement('div');
+            xBottomRow.className = 'x-bottom-row';
+            // X16～X13
+            const group1 = document.createElement('div');
+            group1.className = 'x-bottom-group';
+            ['16', '15', '14', '13'].forEach(num => {
+                group1.appendChild(createBooth(`X${num}`));
             });
-
-            // 12マスが2か所
-            const longBlocks = [
-                { start: 52, end: 49, letter: 'X' },
-                { start: 48, end: 45, letter: 'X' },
-                { start: 44, end: 41, letter: 'X' },
-                { start: 32, end: 29, letter: 'X' },
-                { start: 28, end: 25, letter: 'X' },
-                { start: 24, end: 21, letter: 'X' }
-            ];
-            longBlocks.forEach(block => {
-                const blockContainer = document.createElement('div');
-                blockContainer.className = 'leftwall-block';
-                createBoothRow(blockContainer, block.start, block.end, 'normal', block.letter);
-                leftWallContainer.appendChild(blockContainer);
+            // 1個開ける
+            const spacer1 = document.createElement('div');
+            spacer1.className = 'x-bottom-spacer-1';
+            // X12～X09
+            const group2 = document.createElement('div');
+            group2.className = 'x-bottom-group';
+            ['12', '11', '10', '09'].forEach(num => {
+                group2.appendChild(createBooth(`X${num}`));
             });
-
-            // メインエリア
-            const mainArea = document.createElement('div');
-            mainArea.className = 'main-area';
-
-            // 上段のブース
-            const topRow = document.createElement('div');
-            topRow.className = 'top-row';
-            const topLeft = document.createElement('div');
-            topLeft.className = 'block-container';
-            createBoothRow(topLeft, 16, 9, 'reverse', 'X');
-            const topRight = document.createElement('div');
-            topRight.className = 'block-container';
-            createBoothRow(topRight, 8, 1, 'reverse', 'X');
-            topRow.appendChild(topLeft);
-            topRow.appendChild(topRight);
-            mainArea.appendChild(topRow);
-
-            // 最下部のブース
-            const bottomRow = document.createElement('div');
-            bottomRow.className = 'bottom-row';
-            const bottomBlock = document.createElement('div');
-            bottomBlock.className = 'block-container';
-            createBoothRow(bottomBlock, 16, 1, 'reverse', 'X');
-            bottomRow.appendChild(bottomBlock);
-
-            container.appendChild(leftWallContainer);
-            container.appendChild(mainArea);
-            container.appendChild(bottomRow);
-
-            return container;
+            // 3個開ける
+            const spacer3 = document.createElement('div');
+            spacer3.className = 'x-bottom-spacer-3';
+            // X08～X01
+            const group3 = document.createElement('div');
+            group3.className = 'x-bottom-group';
+            ['08', '07', '06', '05', '04', '03', '02', '01'].forEach(num => {
+                group3.appendChild(createBooth(`X${num}`));
+            });
+            xBottomRow.appendChild(group1);
+            xBottomRow.appendChild(spacer1);
+            xBottomRow.appendChild(group2);
+            xBottomRow.appendChild(spacer3);
+            xBottomRow.appendChild(group3);
+            xContainer.appendChild(xBottomRow);
+            xRow.appendChild(xContainer);
+            return xRow;
         }
         // 島コンテナを生成
         function createIslandContainer(letter) {
             const container = document.createElement('div');
             container.className = 'island-container';
-            container.style.backgroundColor = letter === 'A' ? 'var(--bg-a-area)' : 'var(--bg-bt-area)';
+            container.style.backgroundColor = 'var(--bg-bt-area)';
             const bigLetter = document.createElement('div');
             bigLetter.className = 'big-letter';
             bigLetter.textContent = letter;
             container.appendChild(bigLetter);
-            // U, V, W行の処理
             if (['U', 'V', 'W'].includes(letter)) {
-                // 左上
                 const leftTopLeft = document.createElement('div');
                 leftTopLeft.className = 'block-container';
                 createBoothRow(leftTopLeft, 24, 13, 'reverse', letter);
-                // 左下
                 const leftBottomLeft = document.createElement('div');
                 leftBottomLeft.className = 'block-container';
                 createBoothRow(leftBottomLeft, 25, 36, 'normal', letter);
-                // 右上
                 const leftTopRight = document.createElement('div');
                 leftTopRight.className = 'block-container';
                 createBoothRow(leftTopRight, 12, 1, 'reverse', letter);
-                // 右下
                 const leftBottomRight = document.createElement('div');
                 leftBottomRight.className = 'block-container';
                 createBoothRow(leftBottomRight, 37, 48, 'normal', letter);
-                // 左島を追加
                 const leftIslandSectionTop = document.createElement('div');
                 leftIslandSectionTop.className = 'island-section';
                 leftIslandSectionTop.appendChild(leftTopLeft);
@@ -328,7 +514,6 @@
                 container.appendChild(leftIslandSectionTop);
                 container.appendChild(leftIslandSectionBottom);
             } else {
-                // A～T行の処理
                 const leftTopLeft = document.createElement('div');
                 leftTopLeft.className = 'block-container';
                 if (letter === 'A') {
@@ -419,7 +604,7 @@
         }
         // 初期化
         window.onload = function () {
-            const mapContainer = document.getElementById('map-container');
+            const islandsContainer = document.getElementById('islands-container');
             const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W'];
             letters.forEach(letter => {
                 const islandRow = document.createElement('div');
@@ -429,7 +614,7 @@
                 if (leftIsland.right) {
                     const rightIslandContainer = document.createElement('div');
                     rightIslandContainer.className = 'island-container';
-                    rightIslandContainer.style.backgroundColor = letter === 'A' ? 'var(--bg-a-area)' : 'var(--bg-bt-area)';
+                    rightIslandContainer.style.backgroundColor = 'var(--bg-bt-area)';
                     const rightBigLetter = document.createElement('div');
                     rightBigLetter.className = 'big-letter';
                     rightBigLetter.textContent = letter;
@@ -438,11 +623,12 @@
                     rightIslandContainer.appendChild(leftIsland.right.bottom);
                     islandRow.appendChild(rightIslandContainer);
                 }
-                mapContainer.appendChild(islandRow);
+                islandsContainer.appendChild(islandRow);
             });
             // X行を追加
-            mapContainer.appendChild(createXIsland());
+            islandsContainer.appendChild(createXRow());
         };
     </script>
 </body>
+
 </html>
