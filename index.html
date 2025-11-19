@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>文学フリマ東京41 マップ（A～X行）</title>
+    <title>文学フリマ東京41 マップ（A～X行 / あ～ね行）</title>
     <link rel="icon"
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⏲%3C/text%3E%3C/svg%3E"
         type="image/svg+xml">
@@ -13,7 +13,12 @@
             --pink-highlight: #ff69b4;
             --green-visited: #2ecc71;
             --bg-blue: #e6f7ff;
+            --bg-orange: #ffcc99;
             --bg-bt-area: transparent;
+            --tab-blue: #87ceeb;
+            --tab-blue-active: #4682b4;
+            --tab-orange: #ffa500;
+            --tab-orange-active: #ff8c00;
         }
 
         body {
@@ -34,19 +39,78 @@
             flex-shrink: 0;
         }
 
-        #map-container {
+        #progress-container {
+            height: 5px;
+            background: #ddd;
+            margin-top: 5px;
+            display: none;
+        }
+
+        #progress-bar {
+            height: 100%;
+            background: #4caf50;
+            width: 0%;
+        }
+
+        #tab-area {
+            display: flex;
+            background: #333;
+            flex-shrink: 0;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .tab[data-floor="1F"] {
+            background: var(--tab-blue);
+        }
+
+        .tab[data-floor="4F"] {
+            background: var(--tab-orange);
+        }
+
+        .tab.active[data-floor="1F"] {
+            background: var(--tab-blue-active);
+        }
+
+        .tab.active[data-floor="4F"] {
+            background: var(--tab-orange-active);
+        }
+
+        #map-container-1F,
+        #map-container-4F {
             flex-grow: 1;
             overflow: hidden;
-            background: var(--bg-blue);
             padding: 20px;
             box-sizing: border-box;
+            touch-action: none;
+            position: relative;
+            display: none;
+        }
+
+        #map-container-1F.active {
+            display: block;
+            background: var(--bg-blue);
+        }
+
+        #map-container-4F.active {
+            display: block;
+            background: var(--bg-orange);
         }
 
         .scroll-container {
-            display: flex;
-            overflow-x: auto;
-            height: 100%;
+            transform-origin: 0 0;
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
+            height: 100%;
+            cursor: grab;
         }
 
         .content-wrapper {
@@ -156,37 +220,15 @@
             border-color: var(--green-visited);
         }
 
-        .left-wall {
-            background-color: rgba(255, 255, 255, 0.3);
-            padding: 10px;
-            border-radius: 4px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            box-sizing: border-box;
-            flex-shrink: 0;
-            width: 80px;
-            height: fit-content;
-            margin-right: 100px;
-        }
-
-        .leftwall-block {
-            background-color: rgba(255, 255, 255, 0.3);
-            padding: 4px;
-            border-radius: 4px;
-            margin-bottom: 10px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
         .x-main-content {
             flex-grow: 1;
-            overflow: hidden;
+            overflow: visible;
             display: flex;
             box-sizing: border-box;
             padding: 0;
             min-width: 0;
             height: 100%;
+            position: relative;
         }
 
         .islands-wrapper {
@@ -278,20 +320,46 @@
                 margin-bottom: 20px;
             }
         }
+
+        .reading-area {
+            background-color: rgba(255, 105, 180, 0.3);
+            padding: 2px;
+            margin-left: 20px;
+            flex-shrink: 0;
+            width: 1081px;
+            height: 106%;
+            box-sizing: border-box;
+            position: relative;
+            left: -22px;
+            text-align: center;
+            color: white;
+            font-size: 60px;
+            font-weight: bold;
+            justify-items: center;
+            align-items: center;
+        }
     </style>
 </head>
 
 <body>
     <div id="timer-area">
         <div class="title">文学フリマ東京41 @東京ビックサイト</div>
-        <div id="timer-display" class="timer-text">A～X行表示中</div>
+        <div id="timer-display" class="timer-text"></div>
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
     </div>
-    <div id="map-container">
-        <div class="x-main-content">
-            <div class="scroll-container">
+    <div id="tab-area">
+        <div class="tab" data-floor="1F">南１・２ホール(1F)</div>
+        <div class="tab" data-floor="4F">南・３・４ホール(4F)</div>
+    </div>
+    <div id="map-container-1F" class="active">
+        <div class="scroll-container">
+            <div class="x-main-content">
                 <div class="content-wrapper">
                     <!-- 左壁エリア -->
                     <div class="left-wall">
+                        <!-- X行の左壁ブース -->
                         <div class="xc01-4bx3 xc-block-with-letter">
                             <div class="xc-big-letter">X</div>
                             <div class="leftwall-block">
@@ -381,21 +449,79 @@
                         </div>
                     </div>
                     <!-- メインコンテンツ -->
-                    <div class="islands-wrapper" id="islands-container"></div>
+                    <div class="islands-wrapper" id="islands-container-1F"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="map-container-4F">
+        <div class="scroll-container">
+            <div class="x-main-content">
+                <div class="content-wrapper">
+                    <!-- 左壁エリア -->
+                    <div class="left-wall">
+                        <!-- ね行の左壁ブース -->
+                        <div class="xc01-4bx3 xc-block-with-letter">
+                            <div class="xc-big-letter">ね</div>
+                            <div class="leftwall-block">
+                                <div class="block-column">
+                                    <div class="booth" data-id="ね52">52</div>
+                                    <div class="booth" data-id="ね51">51</div>
+                                    <div class="booth" data-id="ね50">50</div>
+                                    <div class="booth" data-id="ね49">49</div>
+                                </div>
+                            </div>
+                            <div class="leftwall-block">
+                                <div class="block-column">
+                                    <div class="booth" data-id="ね48">48</div>
+                                    <div class="booth" data-id="ね47">47</div>
+                                    <div class="booth" data-id="ね46">46</div>
+                                    <div class="booth" data-id="ね45">45</div>
+                                </div>
+                            </div>
+                            <div class="leftwall-block">
+                                <div class="block-column">
+                                    <div class="booth" data-id="ね44">44</div>
+                                    <div class="booth" data-id="ね43">43</div>
+                                    <div class="booth" data-id="ね42">42</div>
+                                    <div class="booth" data-id="ね41">41</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="xc05-4b xc-block-with-letter">
+                            <div class="xc-big-letter">ね</div>
+                            <div class="leftwall-block">
+                                <div class="block-column">
+                                    <div class="booth" data-id="ね24">24</div>
+                                    <div class="booth" data-id="ね23">23</div>
+                                    <div class="booth" data-id="ね22">22</div>
+                                    <div class="booth" data-id="ね21">21</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- メインコンテンツ -->
+                    <div class="islands-wrapper" id="islands-container-4F"></div>
                 </div>
             </div>
         </div>
     </div>
     <script>
+        // イベント日時設定（例: 2025年12月20日）
+        const EVENT_DATE = "2025-11-23";
+        const OPEN_TIME = "12:00";
+        const CLOSE_TIME = "17:00";
         // ブースの状態を管理
-        const boothState = {};
+        let boothState = JSON.parse(localStorage.getItem('boothState')) || {};
+        // タブの状態を管理
+        const activeTab = localStorage.getItem('activeTab') || '1F';
         // ブースのクリック処理
         function toggleBooth(id) {
             const current = boothState[id] || 0;
             const next = (current + 1) % 3;
-            if (next === 0) delete boothState[id];
-            else boothState[id] = next;
+            boothState[id] = next;
             updateBoothVisually(id, next);
+            localStorage.setItem('boothState', JSON.stringify(boothState));
         }
         // ブースの見た目を更新
         function updateBoothVisually(id, status) {
@@ -410,15 +536,15 @@
             cell.style.height = '40px';
             return cell;
         }
-        // ブースを生成
+        // ブースを生成する関数内で、イベントリスナーを追加
         function createBooth(id) {
             const booth = document.createElement('div');
             booth.className = 'booth';
             booth.dataset.id = id;
-            booth.dataset.status = '0';
-            booth.textContent = id.replace(/[A-Z]/, '');
+            booth.dataset.status = boothState[id] || '0';
+            booth.textContent = id.replace(/[A-Za-zあ-ん]/, '');
             booth.addEventListener('mouseover', () => booth.textContent = id);
-            booth.addEventListener('mouseout', () => booth.textContent = id.replace(/[A-Z]/, ''));
+            booth.addEventListener('mouseout', () => booth.textContent = id.replace(/[A-Za-zあ-ん]/, ''));
             booth.addEventListener('click', () => toggleBooth(id));
             return booth;
         }
@@ -482,14 +608,15 @@
             return xRow;
         }
         // 島コンテナを生成
-        function createIslandContainer(letter) {
-            const container = document.createElement('div');
-            container.className = 'island-container';
-            container.style.backgroundColor = 'var(--bg-bt-area)';
-            const bigLetter = document.createElement('div');
-            bigLetter.className = 'big-letter';
-            bigLetter.textContent = letter;
-            container.appendChild(bigLetter);
+        function createIslandContainer(letter, isHiragana = false) {
+            const leftContainer = document.createElement('div');
+            leftContainer.className = 'island-container';
+            leftContainer.style.backgroundColor = 'var(--bg-bt-area)';
+            const leftBigLetter = document.createElement('div');
+            leftBigLetter.className = 'big-letter';
+            leftBigLetter.textContent = letter;
+            leftContainer.appendChild(leftBigLetter);
+
             if (['U', 'V', 'W'].includes(letter)) {
                 const leftTopLeft = document.createElement('div');
                 leftTopLeft.className = 'block-container';
@@ -511,8 +638,35 @@
                 leftIslandSectionBottom.className = 'island-section';
                 leftIslandSectionBottom.appendChild(leftBottomLeft);
                 leftIslandSectionBottom.appendChild(leftBottomRight);
-                container.appendChild(leftIslandSectionTop);
-                container.appendChild(leftIslandSectionBottom);
+                leftContainer.appendChild(leftIslandSectionTop);
+                leftContainer.appendChild(leftIslandSectionBottom);
+                return { left: leftContainer, right: null };
+            }
+            else if (['な', 'に', 'ぬ'].includes(letter)) {
+                // 「な」「に」「ぬ」行の処理
+                const leftTopLeft = document.createElement('div');
+                leftTopLeft.className = 'block-container';
+                createBoothRow(leftTopLeft, 24, 13, 'reverse', letter);
+                const leftTopRight = document.createElement('div');
+                leftTopRight.className = 'block-container';
+                createBoothRow(leftTopRight, 12, 1, 'reverse', letter);
+                const leftBottomLeft = document.createElement('div');
+                leftBottomLeft.className = 'block-container';
+                createBoothRow(leftBottomLeft, 25, 36, 'normal', letter);
+                const leftBottomRight = document.createElement('div');
+                leftBottomRight.className = 'block-container';
+                createBoothRow(leftBottomRight, 37, 48, 'normal', letter);
+                const leftIslandSectionTop = document.createElement('div');
+                leftIslandSectionTop.className = 'island-section';
+                leftIslandSectionTop.appendChild(leftTopLeft);
+                leftIslandSectionTop.appendChild(leftTopRight);
+                const leftIslandSectionBottom = document.createElement('div');
+                leftIslandSectionBottom.className = 'island-section';
+                leftIslandSectionBottom.appendChild(leftBottomLeft);
+                leftIslandSectionBottom.appendChild(leftBottomRight);
+                leftContainer.appendChild(leftIslandSectionTop);
+                leftContainer.appendChild(leftIslandSectionBottom);
+                return { left: leftContainer, right: null };
             } else {
                 const leftTopLeft = document.createElement('div');
                 leftTopLeft.className = 'block-container';
@@ -542,6 +696,25 @@
                 } else {
                     createBoothRow(leftBottomRight, 59, 70, 'normal', letter);
                 }
+                const leftIslandSectionTop = document.createElement('div');
+                leftIslandSectionTop.className = 'island-section';
+                leftIslandSectionTop.appendChild(leftTopLeft);
+                leftIslandSectionTop.appendChild(leftTopRight);
+                const leftIslandSectionBottom = document.createElement('div');
+                leftIslandSectionBottom.className = 'island-section';
+                leftIslandSectionBottom.appendChild(leftBottomLeft);
+                leftIslandSectionBottom.appendChild(leftBottomRight);
+                leftContainer.appendChild(leftIslandSectionTop);
+                leftContainer.appendChild(leftIslandSectionBottom);
+
+                const rightContainer = document.createElement('div');
+                rightContainer.className = 'island-container';
+                rightContainer.style.backgroundColor = 'var(--bg-bt-area)';
+                const rightBigLetter = document.createElement('div');
+                rightBigLetter.className = 'big-letter';
+                rightBigLetter.textContent = letter;
+                rightContainer.appendChild(rightBigLetter);
+
                 const rightTopLeft = document.createElement('div');
                 rightTopLeft.className = 'block-container';
                 if (letter === 'A') {
@@ -570,14 +743,6 @@
                 } else {
                     createBoothRow(rightBottomRight, 83, 92, 'normal', letter);
                 }
-                const leftIslandSectionTop = document.createElement('div');
-                leftIslandSectionTop.className = 'island-section';
-                leftIslandSectionTop.appendChild(leftTopLeft);
-                leftIslandSectionTop.appendChild(leftTopRight);
-                const leftIslandSectionBottom = document.createElement('div');
-                leftIslandSectionBottom.className = 'island-section';
-                leftIslandSectionBottom.appendChild(leftBottomLeft);
-                leftIslandSectionBottom.appendChild(leftBottomRight);
                 const rightIslandSectionTop = document.createElement('div');
                 rightIslandSectionTop.className = 'island-section';
                 if (letter === 'A') {
@@ -596,38 +761,268 @@
                 }
                 rightIslandSectionBottom.appendChild(rightBottomLeft);
                 rightIslandSectionBottom.appendChild(rightBottomRight);
-                container.appendChild(leftIslandSectionTop);
-                container.appendChild(leftIslandSectionBottom);
-                return { left: container, right: { top: rightIslandSectionTop, bottom: rightIslandSectionBottom } };
+                rightContainer.appendChild(rightIslandSectionTop);
+                rightContainer.appendChild(rightIslandSectionBottom);
+
+                return { left: leftContainer, right: rightContainer };
             }
-            return { left: container, right: null };
+        }
+        // タイマー機能
+        function startTimer() {
+            const timerEl = document.getElementById('timer-display');
+            const barEl = document.getElementById('progress-bar');
+            const barContainer = document.getElementById('progress-container');
+            function update() {
+                const now = new Date();
+                const dateStr = EVENT_DATE;
+                const start = new Date(`${dateStr}T${OPEN_TIME}:00`);
+                const end = new Date(`${dateStr}T${CLOSE_TIME}:00`);
+                const finalEntry = new Date(`${dateStr}T16:55:00`);
+                if (now < start) {
+                    const diff = start - now;
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    timerEl.innerText = `開催まで: ${days}日 ${hours}時間 ${minutes}分`;
+                    barContainer.style.display = 'none';
+                } else if (now >= start && now <= end) {
+                    const totalDuration = end - start;
+                    const elapsed = now - start;
+                    const percentage = (elapsed / totalDuration) * 100;
+                    timerEl.innerText = `開催中 (終了まであと ${Math.floor((end - now) / 60000)}分)`;
+                    barContainer.style.display = 'block';
+                    barEl.style.width = `${percentage}%`;
+                    if (now > finalEntry) {
+                        timerEl.innerText += " ※最終入場終了";
+                        timerEl.style.color = "red";
+                    }
+                } else {
+                    timerEl.innerText = "イベントは終了しました";
+                    barContainer.style.display = 'none';
+                }
+            }
+            setInterval(update, 1000);
+            update();
         }
         // 初期化
         window.onload = function () {
-            const islandsContainer = document.getElementById('islands-container');
+            const islandsContainer1F = document.getElementById('islands-container-1F');
+            const islandsContainer4F = document.getElementById('islands-container-4F');
+            // アルファベット行を追加
             const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W'];
             letters.forEach(letter => {
                 const islandRow = document.createElement('div');
                 islandRow.className = 'island-row';
-                const leftIsland = createIslandContainer(letter);
-                islandRow.appendChild(leftIsland.left);
-                if (leftIsland.right) {
-                    const rightIslandContainer = document.createElement('div');
-                    rightIslandContainer.className = 'island-container';
-                    rightIslandContainer.style.backgroundColor = 'var(--bg-bt-area)';
-                    const rightBigLetter = document.createElement('div');
-                    rightBigLetter.className = 'big-letter';
-                    rightBigLetter.textContent = letter;
-                    rightIslandContainer.appendChild(rightBigLetter);
-                    rightIslandContainer.appendChild(leftIsland.right.top);
-                    rightIslandContainer.appendChild(leftIsland.right.bottom);
-                    islandRow.appendChild(rightIslandContainer);
+                const { left: leftIsland, right: rightIsland } = createIslandContainer(letter);
+                islandRow.appendChild(leftIsland);
+                if (rightIsland) {
+                    islandRow.appendChild(rightIsland);
                 }
-                islandsContainer.appendChild(islandRow);
+                // U/V/W行の右側に試し読みコーナーを追加
+                if (['U', 'V', 'W'].includes(letter)) {
+                    const readingArea = document.createElement('div');
+                    readingArea.className = 'reading-area';
+                    if (letter === 'V') {
+                        readingArea.textContent = '試し読みコーナー';
+                    }
+                    islandRow.appendChild(readingArea);
+                }
+                islandsContainer1F.appendChild(islandRow);
             });
             // X行を追加
-            islandsContainer.appendChild(createXRow());
+            islandsContainer1F.appendChild(createXRow());
+            // ひらがな行を追加（アルファベットをひらがなに置換）
+            const hiraganaLetters = ['あ', 'い', 'う', 'え', 'お', 'か', 'き', 'く', 'け', 'こ', 'さ', 'し', 'す', 'せ', 'そ', 'た', 'ち', 'つ', 'て', 'と', 'な', 'に', 'ぬ', 'ね'];
+            letters.forEach((letter, index) => {
+                if (index < hiraganaLetters.length) {
+                    const hiraganaLetter = hiraganaLetters[index];
+                    const islandRow = document.createElement('div');
+                    islandRow.className = 'island-row';
+                    const { left: leftIsland, right: rightIsland } = createIslandContainer(hiraganaLetter, true);
+
+                    // 左側のブースのIDをひらがなに置換
+                    leftIsland.querySelectorAll('.booth').forEach(booth => {
+                        const id = booth.dataset.id;
+                        if (id) {
+                            booth.dataset.id = id.replace(letter, hiraganaLetter);
+                        }
+                    });
+
+                    // 右側のブースが存在する場合のみ処理
+                    if (rightIsland && !['な', 'に', 'ぬ'].includes(hiraganaLetter)) {
+                        rightIsland.querySelectorAll('.booth').forEach(booth => {
+                            const id = booth.dataset.id;
+                            if (id) {
+                                booth.dataset.id = id.replace(letter, hiraganaLetter);
+                            }
+                        });
+                        islandRow.appendChild(rightIsland); // 右の島を追加
+                    }
+
+                    // 左右の島を正しく配置（23を含む島が左、01を含む島が右）
+                    islandRow.appendChild(leftIsland);
+                    if (rightIsland && !['な', 'に', 'ぬ'].includes(hiraganaLetter)) {
+                        islandRow.appendChild(rightIsland); // 右の島を右に配置
+                    }
+
+
+                    // U/V/W行の右側に試し読みコーナーを追加
+                    if (['U', 'V', 'W'].includes(letter)) {
+                        const readingArea = document.createElement('div');
+                        readingArea.className = 'reading-area';
+                        if (letter === 'V') {
+                            readingArea.textContent = '試し読みコーナー';
+                        }
+                        islandRow.appendChild(readingArea);
+                    }
+
+                    islandsContainer4F.appendChild(islandRow);
+                }
+            });
+
+            // left-wallのboothにホバー・クリックイベントを追加
+            document.querySelectorAll('.left-wall .booth').forEach(booth => {
+                const id = booth.dataset.id;
+                booth.dataset.status = boothState[id] || '0';
+                booth.addEventListener('mouseover', () => booth.textContent = id);
+                booth.addEventListener('mouseout', () => booth.textContent = id.replace(/[A-Za-zあ-ん]/, ''));
+                booth.addEventListener('click', () => toggleBooth(id));
+            });
+            // ページ読み込み時に状態を反映
+            Object.entries(boothState).forEach(([id, status]) => {
+                updateBoothVisually(id, status);
+            });
+            // タブ切り替え機能
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function () {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    const floor = this.dataset.floor;
+                    document.querySelectorAll('#map-container-1F, #map-container-4F').forEach(container => {
+                        container.classList.remove('active');
+                    });
+                    document.getElementById(`map-container-${floor}`).classList.add('active');
+                    localStorage.setItem('activeTab', floor);
+                });
+            });
+            // タブの初期状態を設定
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.dataset.floor === activeTab) {
+                    tab.classList.add('active');
+                }
+            });
+            document.querySelectorAll('#map-container-1F, #map-container-4F').forEach(container => {
+                container.classList.remove('active');
+                if (container.id === `map-container-${activeTab}`) {
+                    container.classList.add('active');
+                }
+            });
+            // タイマー開始
+            startTimer();
         };
+        // ズームとパンの機能を追加（PCとスマホ対応）
+        document.addEventListener('DOMContentLoaded', function () {
+            const mapContainers = [document.getElementById('map-container-1F'), document.getElementById('map-container-4F')];
+            mapContainers.forEach(mapContainer => {
+                const scrollContainer = mapContainer.querySelector('.scroll-container');
+                let scale = 1;
+                let isDragging = false;
+                let startX, startY;
+                let startLeft, startTop;
+                let touchStartDistance = 0;
+                let touchStartScale = 1;
+                // マウスホイールでズーム（PC用）
+                mapContainer.addEventListener('wheel', function (e) {
+                    e.preventDefault();
+                    const rect = mapContainer.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+                    const delta = e.deltaY * -0.05;
+                    const newScale = Math.max(0.5, Math.min(3, scale + delta));
+                    const offsetX = (mouseX - scrollContainer.offsetWidth * (1 - scale) / 2) / scale;
+                    const offsetY = (mouseY - scrollContainer.offsetHeight * (1 - scale) / 2) / scale;
+                    scale = newScale;
+                    scrollContainer.style.transform = `scale(${scale})`;
+                    scrollContainer.style.left = `${-offsetX * scale + mouseX}px`;
+                    scrollContainer.style.top = `${-offsetY * scale + mouseY}px`;
+                }, { passive: false });
+                // マウスドラッグでパン（PC用）
+                scrollContainer.addEventListener('mousedown', function (e) {
+                    isDragging = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    startLeft = parseFloat(scrollContainer.style.left) || 0;
+                    startTop = parseFloat(scrollContainer.style.top) || 0;
+                    scrollContainer.style.cursor = 'grabbing';
+                    e.preventDefault();
+                });
+                scrollContainer.addEventListener('mousemove', function (e) {
+                    if (!isDragging) return;
+                    const x = e.clientX;
+                    const y = e.clientY;
+                    const walkX = (x - startX) / scale + startLeft;
+                    const walkY = (y - startY) / scale + startTop;
+                    scrollContainer.style.left = `${walkX}px`;
+                    scrollContainer.style.top = `${walkY}px`;
+                });
+                document.addEventListener('mouseup', function () {
+                    isDragging = false;
+                    scrollContainer.style.cursor = 'grab';
+                });
+                // タッチイベントでズーム（スマホ用）
+                mapContainer.addEventListener('touchstart', function (e) {
+                    if (e.touches.length === 2) {
+                        e.preventDefault();
+                        touchStartDistance = Math.hypot(
+                            e.touches[0].pageX - e.touches[1].pageX,
+                            e.touches[0].pageY - e.touches[1].pageY
+                        );
+                        touchStartScale = scale;
+                    }
+                }, { passive: false });
+                mapContainer.addEventListener('touchmove', function (e) {
+                    if (e.touches.length === 2) {
+                        e.preventDefault();
+                        const currentDistance = Math.hypot(
+                            e.touches[0].pageX - e.touches[1].pageX,
+                            e.touches[0].pageY - e.touches[1].pageY
+                        );
+                        const touchCenterX = (e.touches[0].pageX + e.touches[1].pageX) / 2 - mapContainer.getBoundingClientRect().left;
+                        const touchCenterY = (e.touches[0].pageY + e.touches[1].pageY) / 2 - mapContainer.getBoundingClientRect().top;
+                        const delta = currentDistance / touchStartDistance;
+                        zoom(touchCenterX, touchCenterY, delta);
+                    } else if (e.touches.length === 1 && !isDragging) {
+                        e.preventDefault();
+                        isDragging = true;
+                        startX = e.touches[0].pageX;
+                        startY = e.touches[0].pageY;
+                        startLeft = parseFloat(scrollContainer.style.left) || 0;
+                        startTop = parseFloat(scrollContainer.style.top) || 0;
+                        scrollContainer.style.cursor = 'grabbing';
+                    }
+                }, { passive: false });
+                mapContainer.addEventListener('touchend', function (e) {
+                    if (e.touches.length < 2) {
+                        isDragging = false;
+                        scrollContainer.style.cursor = 'grab';
+                    }
+                }, { passive: false });
+                // ズーム処理（共通）
+                function zoom(clientX, clientY, delta) {
+                    const rect = mapContainer.getBoundingClientRect();
+                    const mouseX = clientX - rect.left;
+                    const mouseY = clientY - rect.top;
+                    const oldScale = scale;
+                    scale = Math.max(0.5, Math.min(3, touchStartScale * delta));
+                    const offsetX = (mouseX - scrollContainer.offsetWidth * (1 - oldScale) / 2) / oldScale;
+                    const offsetY = (mouseY - scrollContainer.offsetHeight * (1 - oldScale) / 2) / oldScale;
+                    scrollContainer.style.transform = `scale(${scale})`;
+                    scrollContainer.style.left = `${-offsetX * scale + mouseX}px`;
+                    scrollContainer.style.top = `${-offsetY * scale + mouseY}px`;
+                }
+            });
+        });
     </script>
 </body>
 
