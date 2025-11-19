@@ -821,6 +821,21 @@
         #search-modal ul li:hover {
             background-color: #f0f0f0;
         }
+
+        /* ブースハイライト用スタイル */
+        .booth.highlight {
+            background-color: yellow !important;
+            box-shadow: 0 0 10px 5px rgba(255, 255, 0, 0.7) !important;
+        }
+
+        /* 進捗率表示用スタイル */
+        #progress-rates {
+            display: flex;
+            justify-content: space-around;
+            font-size: 12px;
+            color: white;
+            margin-top: 2px;
+        }
     </style>
 </head>
 
@@ -853,6 +868,11 @@
                 <span style="color: white; font-size: 10px; white-space: nowrap;">スマホに送る</span>
             </div>
         </div>
+    </div>
+    <!-- 進捗率表示エリア -->
+    <div id="progress-rates">
+        <span>1F: <span id="progress-rate-1F">0%</span></span>
+        <span>4F: <span id="progress-rate-4F">0%</span></span>
     </div>
 
     </div>
@@ -888,7 +908,7 @@
                 <button id="reset-marks"
                     style="background: #ff6b6b; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; flex: 1; margin-right: 5px;">マークをすべてリセット</button>
                 <button id="tweet-app"
-                    style="background: #1da1f2; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; flex: 1; margin-left: 5px;">Xで布教</button>
+                    style="background: #1da1f2; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; flex: 1; margin-left: 5px;">Xでアプリを布教</button>
             </div>
         </div>
     </div>
@@ -1220,23 +1240,20 @@
             }
         });
         // ブースの状態を切り替える関数
-        function toggleBooth(id) {
+        function toggleBooth(id, state) {
             const current = boothState[id] || 0;
-            const next = (current + 1) % 3;
-            boothState[id] = next;
-            updateBoothVisually(id, next);
-
+            boothState[id] = state;
             // 隣接ブースを検出して同じサークル名ならマーク
             const adjacentBooths = getAdjacentBooths(id);
             adjacentBooths.forEach(adjId => {
                 if (boothInfo[id]?.name === boothInfo[adjId]?.name) {
-                    boothState[adjId] = next;
-                    updateBoothVisually(adjId, next);
+                    boothState[adjId] = state;
+                    updateBoothVisually(adjId, state);
                 }
             });
-
             updateStats();
             localStorage.setItem('boothState', JSON.stringify(boothState));
+            updateBoothVisually(id, state);
         }
 
 
@@ -1258,8 +1275,9 @@
         }
 
 
+        // 隣接ブースの検出ロジックを強化
         function getAdjacentBooths(id) {
-            if (!id) return []; // idがundefinedの場合は空配列を返す
+            if (!id) return [];
             const adjacent = [];
             const firstChar = id.charAt(0);
             const num = parseInt(id.substring(1), 10);
@@ -1282,6 +1300,7 @@
             // 存在するブースのみを返す
             return adjacent.filter(adjId => document.querySelector(`.booth[data-id="${adjId}"]`));
         }
+
 
 
         // ブースの見た目を更新
@@ -1622,11 +1641,32 @@
             setInterval(update, 1000);
             update();
         }
+        // 進捗率を計算して表示
+        function updateProgressRate() {
+            const totalBooths1F = document.querySelectorAll('#map-container-1F .booth:not(.empty)').length;
+            const totalBooths4F = document.querySelectorAll('#map-container-4F .booth:not(.empty)').length;
+            const visited1F = document.querySelectorAll('#map-container-1F .booth[data-status="2"]').length;
+            const visited4F = document.querySelectorAll('#map-container-4F .booth[data-status="2"]').length;
+            const rate1F = totalBooths1F > 0 ? Math.round((visited1F / totalBooths1F) * 100) : 0;
+            const rate4F = totalBooths4F > 0 ? Math.round((visited4F / totalBooths4F) * 100) : 0;
+            document.getElementById('progress-rate-1F').textContent = `${rate1F}%`;
+            document.getElementById('progress-rate-4F').textContent = `${rate4F}%`;
+        }
+
         // ブース情報モーダル表示
         async function showBoothModal(boothId) {
             try {
                 const info = boothInfo[boothId];
                 if (info) {
+                    // 既存のハイライトを解除
+                    document.querySelectorAll('.booth.highlight').forEach(el => {
+                        el.classList.remove('highlight');
+                    });
+                    // 新しいハイライトを適用
+                    const booth = document.querySelector(`.booth[data-id="${boothId}"]`);
+                    if (booth) {
+                        booth.classList.add('highlight');
+                    }
                     const modal = document.getElementById('booth-modal');
                     const idEl = document.getElementById('booth-modal-id');
                     const nameLink = document.getElementById('booth-modal-name-link');
@@ -1640,23 +1680,31 @@
                     modal.style.display = 'flex';
                     document.getElementById('booth-modal-want-to-go').onclick = (e) => {
                         e.stopPropagation(); // 追加: イベントの伝播を停止
-                        toggleBooth(boothId);
-                        updateBoothVisually(boothId, 1);
-                        // モーダルは閉じない
+                        toggleBooth(boothId, 1);
+                        updateStats();
+                        document.querySelectorAll('.booth.highlight').forEach(el => {
+                            el.classList.remove('highlight');
+                        });
                     };
-                    document.querySelector('#booth-modal .close-button').onclick = (e) => {
+
+                    document.getElementById('booth-modal-visited').onclick = (e) => {
                         e.stopPropagation(); // 追加: イベントの伝播を停止
-                        document.getElementById('booth-modal').style.display = 'none';
+
+                        const boothId = document.getElementById('booth-modal-id').textContent;
+                        toggleBooth(boothId, 2); // 状態を「訪問済」に更新
+                        updateStats(); // 集計を更新
+                        localStorage.setItem('boothState', JSON.stringify(boothState));
+                        document.querySelectorAll('.booth.highlight').forEach(el => {
+                            el.classList.remove('highlight');
+                        });
                     };
-                    document.getElementById('booth-modal-visited').onclick = () => {
-                        toggleBooth(boothId);
-                        updateBoothVisually(boothId, 2);
-                        modal.style.display = 'none';
-                    };
-                    document.getElementById('booth-modal-unset').onclick = () => {
-                        toggleBooth(boothId);
-                        updateBoothVisually(boothId, 0);
-                        document.getElementById('booth-modal').style.display = 'none';
+                    document.getElementById('booth-modal-unset').onclick = (e) => {
+                        e.stopPropagation(); // 追加: イベントの伝播を停止
+
+                        const boothId = document.getElementById('booth-modal-id').textContent;
+                        toggleBooth(boothId, 0); // 状態を「未指定」に更新
+                        updateStats(); // 集計を更新
+                        localStorage.setItem('boothState', JSON.stringify(boothState));
                     };
                 } else {
                     console.log('ブース情報が見つかりません。');
@@ -1939,6 +1987,9 @@
             document.getElementById('booth-modal').addEventListener('click', (e) => {
                 if (e.target === document.getElementById('booth-modal')) {
                     document.getElementById('booth-modal').style.display = 'none';
+                    document.querySelectorAll('.booth.highlight').forEach(el => {
+                        el.classList.remove('highlight');
+                    });
                 }
             });
             document.querySelectorAll('.scroll-container').forEach(container => {
@@ -2317,6 +2368,18 @@
             });
             document.querySelector(`.tab[data-floor="${floor}"]`).classList.add('active');
         }
+        // タイトルエリアにクリックイベントを追加
+        document.getElementById('timer-area').addEventListener('click', function (e) {
+            if (e.target.classList.contains('title') || e.target === this) {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.error('全画面表示に失敗しました:', err);
+                    });
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+        });
 
 
         // 検索モーダル表示/非表示
