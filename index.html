@@ -700,12 +700,13 @@
             updateStats();
             localStorage.setItem('boothState', JSON.stringify(boothState));
         }
+
         // ブースの見た目を更新
         function updateBoothVisually(id, status) {
             const el = document.querySelector(`.booth[data-id="${id}"]`);
             if (el) {
                 el.dataset.status = status;
-                // 常にフル表記（ピンク・緑の場合）
+                // ピンク・緑の場合は常にフル表記
                 if (status == 1 || status == 2) {
                     el.textContent = id;
                 } else {
@@ -714,6 +715,7 @@
                 }
             }
         }
+
 
         // 空のセルを生成
         function createEmptyCell() {
