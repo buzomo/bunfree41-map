@@ -238,8 +238,8 @@
         }
 
         .booth.empty {
-            background-color: transparent;
-            border: none;
+            background-color: transparent !important;
+            border: none !important;
             cursor: default;
         }
 
@@ -439,6 +439,11 @@
             /* 最小幅を設定 */
             min-height: 30px;
             /* 最小高さを設定 */
+        }
+
+        /* ブース情報がないセルの文字を薄く表示 */
+        .booth:not([data-name]) {
+            opacity: 0.3;
         }
 
 
@@ -1030,15 +1035,14 @@
 
         </div>
     </div>
-
-
-
     <script>
         let isZooming = false;
         let isPanning = false;
         let isDragging = false;
-
-        let startClickX, startClickY;
+        let startX, startY, scrollLeft, scrollTop;
+        let touchStartX, touchStartY, touchStartTime;
+        let initialDistance = 0;
+        let initialScale = 1;
         let clickedBoothId = null;
         let boothInfo = {};
         // イベント日時設定
@@ -1062,30 +1066,24 @@
         }
         // ジャンル色分けの状態を管理
         let isGenreColorEnabled = localStorage.getItem('isGenreColorEnabled') === 'true' || false;
-
         // ジャンル色分けをトグルする関数
         function toggleGenreColors() {
             isGenreColorEnabled = !isGenreColorEnabled;
             localStorage.setItem('isGenreColorEnabled', isGenreColorEnabled);
             if (isGenreColorEnabled) {
-                // ジャンル色分けを有効化（CSSのデフォルトスタイルを適用）
                 document.querySelectorAll('.booth').forEach(booth => {
                     booth.style.backgroundColor = '';
                     booth.style.borderColor = '';
                 });
             } else {
-                // ジャンル色分けを無効化（白黒に統一）
                 resetBoothStyles();
             }
         }
-
-
         // Xで布教ボタンのクリックイベント
         document.getElementById('tweet-app').addEventListener('click', function () {
             const tweetText = encodeURIComponent('文学フリマ東京41のマップアプリが便利！ ダウンロード不要 #文学フリマ東京41 https://bft41.poet.blue');
             window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
         });
-
         // マークをすべてリセットボタンのクリックイベント
         document.getElementById('reset-marks').addEventListener('click', function () {
             if (confirm('本当にすべてのマークをリセットしますか？')) {
@@ -1094,7 +1092,6 @@
                 location.reload();
             }
         });
-
         // ブースの状態を切り替える関数
         function toggleBooth(id) {
             const current = boothState[id] || 0;
@@ -1104,7 +1101,6 @@
             updateStats();
             localStorage.setItem('boothState', JSON.stringify(boothState));
         }
-
         // ブースの見た目を更新
         function updateBoothVisually(id, status) {
             const el = document.querySelector(`.booth[data-id="${id}"]`);
@@ -1117,7 +1113,6 @@
                 }
             }
         }
-
         // 空のセルを生成
         function createEmptyCell() {
             const cell = document.createElement('div');
@@ -1126,8 +1121,7 @@
             cell.style.height = '40px';
             return cell;
         }
-
-        // ブースを生成
+        // ブースを生成する関数内で修正
         function createBooth(id) {
             const booth = document.createElement('div');
             booth.className = 'booth';
@@ -1137,37 +1131,15 @@
                 booth.dataset.mainGenre = boothInfo[id].genre[0] || "その他";
                 booth.dataset.subGenre = boothInfo[id].genre.slice(1).join(',') || "その他";
                 booth.dataset.genre = boothInfo[id].genre.join(',');
-                booth.dataset.name = boothInfo[id].name;
-            } else {
-                booth.dataset.mainGenre = "その他";
-                booth.dataset.subGenre = "その他";
-                booth.dataset.genre = "";
-                booth.dataset.name = id;
+                booth.dataset.name = boothInfo[id].name; // ブース情報がある場合のみ設定
             }
             if (boothState[id] == 1 || boothState[id] == 2) {
                 booth.textContent = id;
             } else {
                 booth.textContent = id.replace(/[A-Za-zあ-ん]/, '');
             }
-            booth.addEventListener('click', (e) => {
-                e.preventDefault();
-                showBoothModal(id);
-            }, { capture: true });
-            booth.addEventListener('mouseover', () => {
-                booth.textContent = id;
-            });
-            booth.addEventListener('mouseout', () => {
-                if (booth.dataset.status == 1 || booth.dataset.status == 2) {
-                    booth.textContent = id;
-                } else {
-                    booth.textContent = id.replace(/[A-Za-zあ-ん]/, '');
-                }
-            });
-
-
             return booth;
         }
-
 
         // ブースの行を生成
         function createBoothRow(container, start, end, direction, letter) {
@@ -1191,7 +1163,6 @@
             });
             container.appendChild(blockRow);
         }
-
         // X行のブースを生成
         function createXRow() {
             const xRow = document.createElement('div');
@@ -1233,7 +1204,6 @@
             xRow.appendChild(xContainer);
             return xRow;
         }
-
         // 「ね」行の底部ブースを生成
         function createNERow() {
             const neRow = document.createElement('div');
@@ -1277,7 +1247,6 @@
             neRow.appendChild(neContainer);
             return neRow;
         }
-
         // 島コンテナを生成
         function createIslandContainer(letter, isHiragana = false) {
             const leftContainer = document.createElement('div');
@@ -1432,7 +1401,6 @@
                 return { left: leftContainer, right: rightContainer };
             }
         }
-
         // タイマー機能
         function startTimer() {
             const timerEl = document.getElementById('timer-display');
@@ -1470,7 +1438,6 @@
             setInterval(update, 1000);
             update();
         }
-
         // ブース情報モーダル表示
         async function showBoothModal(boothId) {
             try {
@@ -1487,10 +1454,15 @@
                     genreEl.style.backgroundColor = getGenreColor(info.genre[0], info.genre.slice(1).join(','));
                     genreEl.style.color = "white";
                     modal.style.display = 'flex';
-                    document.getElementById('booth-modal-want-to-go').onclick = () => {
+                    document.getElementById('booth-modal-want-to-go').onclick = (e) => {
+                        e.stopPropagation(); // 追加: イベントの伝播を停止
                         toggleBooth(boothId);
                         updateBoothVisually(boothId, 1);
-                        modal.style.display = 'none';
+                        // モーダルは閉じない
+                    };
+                    document.querySelector('#booth-modal .close-button').onclick = (e) => {
+                        e.stopPropagation(); // 追加: イベントの伝播を停止
+                        document.getElementById('booth-modal').style.display = 'none';
                     };
                     document.getElementById('booth-modal-visited').onclick = () => {
                         toggleBooth(boothId);
@@ -1502,17 +1474,13 @@
                         updateBoothVisually(boothId, 0);
                         document.getElementById('booth-modal').style.display = 'none';
                     };
-
                 } else {
                     alert('ブース情報が見つかりません。');
                 }
             } catch (error) {
-                console.error('ブース情報の読み込みに失敗しました:', error);
-                alert('ブース情報の読み込みに失敗しました。');
+                return;
             }
         }
-
-
         // ジャンルカラーを取得
         function getGenreColor(mainGenre, subGenre) {
             const mainGenreColors = {
@@ -1550,7 +1518,6 @@
             }
             return mainGenreColors[mainGenre] || "#808080";
         }
-
         // booth.jsonを読み込む
         async function loadBoothInfo() {
             try {
@@ -1573,8 +1540,6 @@
                 booth.style.borderStyle = 'solid';
             });
         }
-
-
         // 集計エリアの初期化
         function updateStats() {
             const booths1F = document.querySelectorAll('#map-container-1F .booth');
@@ -1588,21 +1553,9 @@
             document.querySelector('.count[data-floor="4F"][data-status="1"]').textContent = wantToGo4F;
             document.querySelector('.count[data-floor="4F"][data-status="2"]').textContent = visited4F;
         }
-
         // 初期化
         window.onload = async function () {
             await loadBoothInfo();
-
-            document.querySelectorAll('.booth').forEach(booth => {
-                const id = booth.dataset.id;
-                if (boothInfo[id]) {
-                    booth.dataset.mainGenre = boothInfo[id].genre[0] || "その他";
-                    booth.dataset.subGenre = boothInfo[id].genre.slice(1).join(',') || "その他";
-                    booth.dataset.genre = boothInfo[id].genre.join(',');
-                    booth.dataset.name = boothInfo[id].name;
-                }
-            });
-
             const islandsContainer1F = document.getElementById('islands-container-1F');
             const islandsContainer4F = document.getElementById('islands-container-4F');
             const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W'];
@@ -1665,20 +1618,27 @@
                     }
                 }
             });
-            document.querySelectorAll('.left-wall .booth').forEach(booth => {
+            // ブースのイベントリスナーを設定
+            document.querySelectorAll('.booth').forEach(booth => {
                 const id = booth.dataset.id;
+                if (boothInfo[id]) {
+                    booth.dataset.mainGenre = boothInfo[id].genre[0] || "その他";
+                    booth.dataset.subGenre = boothInfo[id].genre.slice(1).join(',') || "その他";
+                    booth.dataset.genre = boothInfo[id].genre.join(',');
+                    booth.dataset.name = boothInfo[id].name;
+                }
                 booth.dataset.status = boothState[id] || '0';
                 booth.addEventListener('mouseover', () => booth.textContent = id);
-                booth.addEventListener('mouseout', () => booth.textContent = id.replace(/[A-Za-zあ-ん]/, ''));
-                booth.addEventListener('click', () => {
-                    if (!isZooming) toggleBooth(id);
-                });
-                booth.addEventListener('touchend', (e) => {
-                    if (!isZooming) {
-                        e.preventDefault();
-                        toggleBooth(id);
+                booth.addEventListener('mouseout', () => {
+                    if (booth.dataset.status != 1 && booth.dataset.status != 2) {
+                        booth.textContent = id.replace(/[A-Za-zあ-ん]/, '');
                     }
                 });
+            });
+            document.querySelectorAll('.left-wall .booth').forEach(booth => {
+                const id = booth.dataset.id;
+                booth.addEventListener('mouseover', () => booth.textContent = id);
+                booth.addEventListener('mouseout', () => booth.textContent = id.replace(/[A-Za-zあ-ん]/, ''));
             });
             Object.entries(boothState).forEach(([id, status]) => {
                 updateBoothVisually(id, status);
@@ -1708,46 +1668,38 @@
                 }
             });
             document.getElementById('booth-modal').addEventListener('click', (e) => {
-                if (e.target === e.currentTarget) {
+                if (e.target === document.getElementById('booth-modal')) {
                     document.getElementById('booth-modal').style.display = 'none';
                 }
             });
-            // 初期ズームを全体表示に設定
             document.querySelectorAll('.scroll-container').forEach(container => {
-                container.style.transform = 'scale(0.7)'; // 全体が見えるように適切なスケールを設定
+                container.style.transform = 'scale(0.7)';
                 container.style.left = '0';
                 container.style.top = '0';
             });
             startTimer();
             updateStats();
-            // ジャンル色分けボタンのイベントリスナー
             document.getElementById('toggle-genre-colors').addEventListener('click', toggleGenreColors);
-
-            // ページ読み込み時にジャンル色分けの状態を復元
             if (!isGenreColorEnabled) {
                 resetBoothStyles();
             }
-
+            // タッチ/ズーム/パン操作の初期化
+            initTouchZoomPan();
         };
-        document.addEventListener('DOMContentLoaded', function () {
+        // タッチ/ズーム/パン操作の初期化
+        function initTouchZoomPan() {
             const mapContainers = [document.getElementById('map-container-1F'), document.getElementById('map-container-4F')];
             let scale = 0.7;
-            let isPanning = false;
-            let isDragging = false;
-
-
             mapContainers.forEach(mapContainer => {
                 const scrollContainer = mapContainer.querySelector('.scroll-container');
-                const booths = mapContainer.querySelectorAll('.booth');
-
                 // マウスホイールでズーム
                 mapContainer.addEventListener('wheel', function (e) {
                     e.preventDefault();
                     const rect = mapContainer.getBoundingClientRect();
                     const mouseX = e.clientX - rect.left;
                     const mouseY = e.clientY - rect.top;
-                    const delta = e.deltaY * -0.1;
-                    const newScale = Math.max(0.7, Math.min(3, scale + delta));
+                    const delta = e.deltaY * -0.001;
+                    const newScale = Math.max(0.5, Math.min(3, scale + delta));
                     const offsetX = (mouseX - scrollContainer.offsetWidth * (1 - scale) / 2) / scale;
                     const offsetY = (mouseY - scrollContainer.offsetHeight * (1 - scale) / 2) / scale;
                     scale = newScale;
@@ -1758,56 +1710,77 @@
                 // タッチ開始時
                 scrollContainer.addEventListener('touchstart', function (e) {
                     if (e.touches.length === 2) {
-                        // 2本指の場合はズーム操作と判断し、preventDefaultを呼ばない
-                        return;
+                        isZooming = true;
+                        const touch1 = e.touches[0];
+                        const touch2 = e.touches[1];
+                        initialDistance = Math.hypot(
+                            touch1.clientX - touch2.clientX,
+                            touch1.clientY - touch2.clientY
+                        );
+                        initialScale = scale;
+                        e.preventDefault();
+                    } else {
+                        touchStartX = e.touches[0].clientX;
+                        touchStartY = e.touches[0].clientY;
+                        touchStartTime = Date.now();
+                        scrollLeft = parseFloat(scrollContainer.style.left) || 0;
+                        scrollTop = parseFloat(scrollContainer.style.top) || 0;
                     }
-                    isDragging = true;
-                    isPanning = true;
-                    const touch = e.touches[0];
-                    touchStartX = touch.clientX;
-                    touchStartY = touch.clientY;
-                    scrollLeft = parseFloat(scrollContainer.style.left) || 0;
-                    scrollTop = parseFloat(scrollContainer.style.top) || 0;
-                    scrollContainer.style.cursor = 'grabbing';
-                    booths.forEach(booth => {
-                        booth.style.pointerEvents = 'none';
-                    });
-                    e.preventDefault(); // 1本指の場合のみpreventDefaultを呼び出す
                 }, { passive: false });
-
-
-
                 // タッチムーブ
                 document.addEventListener('touchmove', function (e) {
-                    if (!isDragging) return;
-                    const touch = e.touches[0];
-                    const x = touch.clientX;
-                    const y = touch.clientY;
-                    const walkX = (x - touchStartX) + scrollLeft;
-                    const walkY = (y - touchStartY) + scrollTop;
-                    scrollContainer.style.left = `${walkX}px`;
-                    scrollContainer.style.top = `${walkY}px`;
-                    e.preventDefault();
+                    if (isZooming && e.touches.length === 2) {
+                        const touch1 = e.touches[0];
+                        const touch2 = e.touches[1];
+                        const currentDistance = Math.hypot(
+                            touch1.clientX - touch2.clientX,
+                            touch1.clientY - touch2.clientY
+                        );
+                        const newScale = initialScale * (currentDistance / initialDistance);
+                        scale = Math.max(0.5, Math.min(3, newScale));
+                        scrollContainer.style.transform = `scale(${scale})`;
+                        e.preventDefault();
+                    } else if (e.touches.length === 1) {
+                        const touch = e.touches[0];
+                        const x = touch.clientX;
+                        const y = touch.clientY;
+                        const walkX = (x - touchStartX) + scrollLeft;
+                        const walkY = (y - touchStartY) + scrollTop;
+                        scrollContainer.style.left = `${walkX}px`;
+                        scrollContainer.style.top = `${walkY}px`;
+                        e.preventDefault();
+                        isPanning = true;
+                    }
                 }, { passive: false });
-
                 // タッチ終了
                 document.addEventListener('touchend', function (e) {
-                    isDragging = false;
-                    scrollContainer.style.cursor = 'grab';
-
-                    // 300ms後にブースのクリックを物理的に有効化
-                    setTimeout(() => {
-                        booths.forEach(booth => {
-                            booth.style.pointerEvents = 'auto';
-                        });
+                    if (isZooming && e.touches.length < 2) {
+                        isZooming = false;
+                    }
+                    if (e.touches.length === 0) {
+                        const touchEndTime = Date.now();
+                        const touchDuration = touchEndTime - touchStartTime;
+                        const touch = e.changedTouches[0];
+                        const endX = touch.clientX;
+                        const endY = touch.clientY;
+                        const distance = Math.sqrt(
+                            Math.pow(endX - touchStartX, 2) +
+                            Math.pow(endY - touchStartY, 2)
+                        );
+                        if (touchDuration < 200 && distance < 10) {
+                            const element = document.elementFromPoint(touchStartX, touchStartY);
+                            if (element && element.classList.contains('booth')) {
+                                e.preventDefault(); // 追加: デフォルトのイベントを防止
+                                const boothId = element.dataset.id;
+                                showBoothModal(boothId);
+                            }
+                        }
                         isPanning = false;
-                    }, 300);
+                    }
                 });
-
                 // マウスドラッグ開始
                 scrollContainer.addEventListener('mousedown', function (e) {
                     isDragging = true;
-                    isPanning = true;
                     startX = e.clientX;
                     startY = e.clientY;
                     scrollLeft = parseFloat(scrollContainer.style.left) || 0;
@@ -1815,134 +1788,39 @@
                     scrollContainer.style.cursor = 'grabbing';
                     e.preventDefault();
                 });
-
                 // マウスムーブ
                 document.addEventListener('mousemove', function (e) {
-                    if (!isDragging) return;
-                    const x = e.clientX;
-                    const y = e.clientY;
-                    const walkX = (x - startX) + scrollLeft;
-                    const walkY = (y - startY) + scrollTop;
-                    scrollContainer.style.left = `${walkX}px`;
-                    scrollContainer.style.top = `${walkY}px`;
+                    if (isDragging) {
+                        const x = e.clientX;
+                        const y = e.clientY;
+                        const walkX = (x - startX) + scrollLeft;
+                        const walkY = (y - startY) + scrollTop;
+                        scrollContainer.style.left = `${walkX}px`;
+                        scrollContainer.style.top = `${walkY}px`;
+                    }
                 });
-
                 // マウスアップ
                 document.addEventListener('mouseup', function () {
                     isDragging = false;
                     scrollContainer.style.cursor = 'grab';
-                    setTimeout(() => { isPanning = false; }, 300);
                 });
-
-                // 初期ズームを設定
-                scrollContainer.style.transform = `scale(${scale})`;
-                scrollContainer.style.left = '0';
-                scrollContainer.style.top = '0';
-            });
-
-
-        });
-
-        // ドキュメント全体の mouseup イベント
-        document.addEventListener('mouseup', (e) => {
-            if (isPanning) {
-                isPanning = false;
-                clickedBoothId = null;
-                return;
-            }
-            if (!clickedBoothId) return;
-
-            const distance = Math.sqrt(
-                Math.pow(e.clientX - startClickX, 2) +
-                Math.pow(e.clientY - startClickY, 2)
-            );
-            if (distance < 5) {
-                const booth = document.querySelector(`.booth[data-id="${clickedBoothId}"]`);
-                if (booth) {
-                    showBoothModal(clickedBoothId);
-                }
-            }
-            clickedBoothId = null;
-        });
-        // マウスダウン時の処理（ブース）
-        document.querySelectorAll('.booth').forEach(booth => {
-            booth.addEventListener('mousedown', (e) => {
-                // パン操作中でない場合のみ記録
-                if (!isPanning) {
-                    clickedBoothId = booth.dataset.id;
-                    startClickX = e.clientX;
-                    startClickY = e.clientY;
-                } else {
-                    clickedBoothId = null;
-                }
-            });
-        });
-
-        // マウスダウン時の処理（スクロールコンテナ）
-        document.querySelectorAll('.scroll-container').forEach(container => {
-            container.addEventListener('mousedown', function (e) {
-                isDragging = true;
-                startX = e.clientX;
-                startY = e.clientY;
-                scrollLeft = parseFloat(container.style.left) || 0;
-                scrollTop = parseFloat(container.style.top) || 0;
-                container.style.cursor = 'grabbing';
-                e.preventDefault();
-            });
-        });
-
-        // マウスムーブ時の処理
-        document.addEventListener('mousemove', function (e) {
-            if (isDragging) {
-                // マウスが動いたらパン操作中と判定
-                isPanning = true;
-                // ブースのクリックIDをクリア
-                clickedBoothId = null;
-            }
-        });
-
-        // マウスアップ時の処理
-        document.addEventListener('mouseup', function (e) {
-            if (isDragging) {
-                isDragging = false;
-                document.querySelectorAll('.scroll-container').forEach(container => {
-                    container.style.cursor = 'grab';
+                // ブースのクリックイベント
+                document.querySelectorAll('.booth').forEach(booth => {
+                    booth.addEventListener('click', function (e) {
+                        if (!isPanning && !isZooming) {
+                            const id = this.dataset.id;
+                            showBoothModal(id);
+                        }
+                    });
                 });
-            }
-
-            // パン操作中はモーダルを表示しない
-            if (isPanning) {
-                isPanning = false;
-                clickedBoothId = null;
-                return;
-            }
-
-            // パン操作中でない場合のみモーダル表示
-            if (clickedBoothId) {
-                const distance = Math.sqrt(
-                    Math.pow(e.clientX - startClickX, 2) +
-                    Math.pow(e.clientY - startClickY, 2)
-                );
-                if (distance < 2) {
-                    const booth = document.querySelector(`.booth[data-id="${clickedBoothId}"]`);
-                    if (booth) {
-                        showBoothModal(clickedBoothId);
-                    }
-                }
-            }
-
-            // フラグをリセット
-            clickedBoothId = null;
-        });
-
+            });
+        }
         // QRコード生成ライブラリの読み込み
         function loadQRCodeLibrary() {
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
-
             document.head.appendChild(script);
         }
-
         // 共有ボタンのクリックイベント
         document.getElementById('share-button').addEventListener('click', function () {
             const compressedData = LZString.compressToBase64(JSON.stringify(boothState));
@@ -1964,7 +1842,6 @@
                 this.style.display = 'none';
             }
         });
-
         // ページ読み込み時にURLからデータを復元
         window.addEventListener('load', function () {
             loadQRCodeLibrary();
