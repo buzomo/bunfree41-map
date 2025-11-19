@@ -722,6 +722,23 @@
 
 
         /* 行った */
+
+        #booth-modal-genre {
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 4px;
+            display: inline-block;
+            color: white;
+            /* 文字色を白に */
+            background-color: #666;
+            /* デフォルトの背景色 */
+        }
+
+        #booth-modal-name-link {
+            color: royalblue !important;
+            text-decoration: underline !important;
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -1450,6 +1467,8 @@
                     // ジャンル表示にジャンルカラーを反映
                     genreEl.textContent = info.genre.join(' / ');
                     genreEl.style.backgroundColor = getGenreColor(info.genre[0], info.genre.slice(1).join(','));
+                    genreEl.style.color = "white"; // 文字色を白に固定
+
 
                     modal.style.display = 'flex';
 
@@ -1474,26 +1493,25 @@
         }
 
 
-        // ジャンルカラーを取得する関数
         function getGenreColor(mainGenre, subGenre) {
             // メインジャンルごとのデフォルトカラー
             const mainGenreColors = {
-                "小説": "#E0F6FF",
-                "詩歌": "#FFEED1",
-                "評論・研究": "#E0FFE0",
-                "ノンフィクション": "#E8DFFF",
-                "その他": "#f0f0f0"
+                "小説": "#87CEEB",
+                "詩歌": "#FFD700",
+                "評論・研究": "#98FB98",
+                "ノンフィクション": "#DDA0DD",
+                "その他": "#808080"
             };
             // サブジャンルごとのカラー（CSSから抜粋）
             const subGenreColors = {
-                "SF": "#E0F6FF",
+                "SF": "#87CEEB",
                 "BL": "#FFB6C1",
                 "ファンタジー・幻想文学": "#DDA0DD",
                 "ミステリー": "#4685FF",
                 "ライトノベル": "#87CEFA",
                 "恋愛": "#FFC0CB",
                 "ホラー・怪奇": "#6BA9FF",
-                "歴史・古典": "#CCE7FF",
+                "歴史・古類": "#CCE7FF",
                 "海外文学・翻訳": "#B3DBFF",
                 "青春・学園": "#98FB98",
                 "俳句・短歌・川柳": "#FFEFB5",
@@ -1513,8 +1531,9 @@
                 }
             }
             // メインジャンルのカラーを返す
-            return mainGenreColors[mainGenre] || "#f0f0f0";
+            return mainGenreColors[mainGenre] || "#808080";
         }
+
 
         // モーダル外側タップで閉じる
         document.getElementById('booth-modal').addEventListener('click', (e) => {
@@ -1808,11 +1827,17 @@
                     }
                 }, { passive: false });
 
-                scrollContainer.addEventListener('touchend', function () {
+                // スマホ用: タッチ操作
+                scrollContainer.addEventListener('touchend', function (e) {
                     isDragging = false;
                     isZooming = false;
                     scrollContainer.style.cursor = 'grab';
+                    // タッチ終了後、短時間だけタッチイベントを無効化
+                    setTimeout(() => {
+                        isZooming = false;
+                    }, 100);
                 }, { passive: false });
+
 
                 // --- ズーム処理（共通）---
                 function zoom(clientX, clientY, delta) {
