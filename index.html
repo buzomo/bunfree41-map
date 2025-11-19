@@ -385,7 +385,7 @@
         }
 
         .scroll-container {
-            touch-action: manipulation;
+            touch-action: auto;
             /* タッチ操作の競合を回避 */
         }
 
@@ -1700,7 +1700,6 @@
                     scrollContainer.style.left = `${-offsetX * scale + mouseX}px`;
                     scrollContainer.style.top = `${-offsetY * scale + mouseY}px`;
                 }, { passive: false });
-
                 // タッチ開始時
                 scrollContainer.addEventListener('touchstart', function (e) {
                     if (e.touches.length === 2) {
@@ -1718,8 +1717,9 @@
                     booths.forEach(booth => {
                         booth.style.pointerEvents = 'none';
                     });
-                    // e.preventDefault(); // コメントアウトまたは条件付きで呼び出す
+                    e.preventDefault(); // 1本指の場合のみpreventDefaultを呼び出す
                 }, { passive: false });
+
 
 
                 // タッチムーブ
