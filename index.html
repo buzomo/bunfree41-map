@@ -1698,8 +1698,8 @@
                     const rect = mapContainer.getBoundingClientRect();
                     const mouseX = e.clientX - rect.left;
                     const mouseY = e.clientY - rect.top;
-                    const delta = e.deltaY * -0.001;
-                    const newScale = Math.max(0.5, Math.min(3, scale + delta));
+                    const delta = e.deltaY * -0.1;
+                    const newScale = Math.max(0.2, Math.min(3, scale + delta));
                     const offsetX = (mouseX - scrollContainer.offsetWidth * (1 - scale) / 2) / scale;
                     const offsetY = (mouseY - scrollContainer.offsetHeight * (1 - scale) / 2) / scale;
                     scale = newScale;
@@ -1737,7 +1737,7 @@
                             touch1.clientY - touch2.clientY
                         );
                         const newScale = initialScale * (currentDistance / initialDistance);
-                        scale = Math.max(0.5, Math.min(3, newScale));
+                        scale = Math.max(0.2, Math.min(3, newScale));
                         scrollContainer.style.transform = `scale(${scale})`;
                         e.preventDefault();
                     } else if (e.touches.length === 1) {
