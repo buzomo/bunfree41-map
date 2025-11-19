@@ -1956,10 +1956,15 @@
                 window.addEventListener('load', () => {
                     navigator.serviceWorker.register('/sw.js')
                         .then((registration) => {
+                            console.log('ServiceWorker登録成功:', registration.scope);
                             registration.update(); // 更新を強制
+                        })
+                        .catch((error) => {
+                            console.log('ServiceWorker登録失敗:', error);
                         });
                 });
             }
+
             let deferredPrompt;
 
             checkExistingMarks();

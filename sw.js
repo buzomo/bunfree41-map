@@ -1,9 +1,10 @@
 // sw.js
-const CACHE_NAME = 'bft41-map-v4'; // バージョンを更新
+const CACHE_NAME = 'bft41-map-v5'; // バージョンを更新
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/booth.json',
   '/icon-192x192.png',
   '/icon-512x512.png',
   '/icon-32x32.png',
@@ -39,6 +40,18 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+// オフライン時のフォールバックページ
+self.addEventListener('fetch', (event) => {
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => {
+          return caches.match('/index.html');
+        })
+    );
+  }
+});
+
 
 // 古いキャッシュを削除
 self.addEventListener('activate', (event) => {
