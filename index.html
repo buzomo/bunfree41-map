@@ -802,6 +802,10 @@
             position: relative;
             opacity: 0;
             transition: height 0.5s ease, opacity 0.5s ease, padding 0.5s ease;
+            touch-action: pan-y;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            /* iOS向け */
         }
 
         #wishlist-container.show {
@@ -2190,6 +2194,22 @@
                 wishlistContainer.classList.add('show');
             }, 10);
         }
+        document.getElementById('wishlist-container').addEventListener('touchstart', function (e) {
+            e.stopPropagation();
+        });
+        document.getElementById('wishlist-container').addEventListener('touchmove', function (e) {
+            e.stopPropagation();
+        });
+        // 地図のパン操作を制御
+        document.querySelectorAll('.scroll-container').forEach(container => {
+            container.addEventListener('touchmove', function (e) {
+                if (e.target.closest('#wishlist-container')) {
+                    e.preventDefault();
+                    return;
+                }
+                // 既存のパン操作ロジック
+            }, { passive: false });
+        });
 
 
         // リストの外をタップすると閉じる
