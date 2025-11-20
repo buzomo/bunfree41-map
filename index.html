@@ -2519,6 +2519,18 @@
             }
         });
 
+        // ページ読み込み時に実行
+        window.addEventListener('DOMContentLoaded', function () {
+            // ハッシュが存在する場合
+            if (window.location.hash) {
+                // ハッシュのデータを取得
+                const hashData = window.location.hash.substring(1); // '#' を除く
+                console.log('ハッシュデータ:', hashData); // ここでデータを処理
+
+                // ハッシュなしのURLに遷移
+                window.history.replaceState(null, null, window.location.pathname + window.location.search);
+            }
+    </script>
 
 
     </script>
