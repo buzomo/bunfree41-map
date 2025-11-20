@@ -1784,31 +1784,45 @@
             // メモと金額の読み込み
             loadBoothMemoAndAmount(boothId);
 
-            // ボタンイベント
             document.getElementById('booth-modal-want-to-go').onclick = (e) => {
                 e.stopPropagation();
+                const boothId = document.getElementById('booth-modal-id').textContent.split(',')[0];
+                const memo = document.getElementById('booth-modal-memo').value;
+                const amount = document.getElementById('booth-modal-amount').value;
+                saveBoothMemoAndAmount(boothId, memo, amount); // 追加
                 toggleBooth(boothId, 1);
                 updateStats();
                 document.querySelectorAll('.booth.highlight').forEach(el => {
                     el.classList.remove('highlight');
                 });
             };
+
             document.getElementById('booth-modal-visited').onclick = (e) => {
                 e.stopPropagation();
+                const boothId = document.getElementById('booth-modal-id').textContent.split(',')[0];
+                const memo = document.getElementById('booth-modal-memo').value;
+                const amount = document.getElementById('booth-modal-amount').value;
+                saveBoothMemoAndAmount(boothId, memo, amount); // 追加
                 toggleBooth(boothId, 2);
                 updateStats();
                 document.querySelectorAll('.booth.highlight').forEach(el => {
                     el.classList.remove('highlight');
                 });
             };
+
             document.getElementById('booth-modal-unset').onclick = (e) => {
                 e.stopPropagation();
+                const boothId = document.getElementById('booth-modal-id').textContent.split(',')[0];
+                const memo = document.getElementById('booth-modal-memo').value;
+                const amount = document.getElementById('booth-modal-amount').value;
+                saveBoothMemoAndAmount(boothId, memo, amount); // 追加
                 toggleBooth(boothId, 0);
                 updateStats();
                 document.querySelectorAll('.booth.highlight').forEach(el => {
                     el.classList.remove('highlight');
                 });
             };
+
         }
 
 
@@ -2043,14 +2057,23 @@
                     container.classList.add('active');
                 }
             });
+
             document.getElementById('booth-modal').addEventListener('click', (e) => {
                 if (e.target === document.getElementById('booth-modal')) {
+                    // 入力内容を保存
+                    const boothId = document.getElementById('booth-modal-id').textContent.split(',')[0];
+                    const memo = document.getElementById('booth-modal-memo').value;
+                    const amount = document.getElementById('booth-modal-amount').value;
+                    saveBoothMemoAndAmount(boothId, memo, amount);
+
+                    // モーダルを非表示に
                     document.getElementById('booth-modal').style.display = 'none';
                     document.querySelectorAll('.booth.highlight').forEach(el => {
                         el.classList.remove('highlight');
                     });
                 }
             });
+
             document.querySelectorAll('.scroll-container').forEach(container => {
                 container.style.transform = 'scale(0.7)';
                 container.style.left = '0';
