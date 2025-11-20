@@ -827,15 +827,6 @@
             background-color: yellow !important;
             box-shadow: 0 0 10px 5px rgba(255, 255, 0, 0.7) !important;
         }
-
-        /* 進捗率表示用スタイル */
-        #progress-rates {
-            display: flex;
-            justify-content: space-around;
-            font-size: 12px;
-            color: white;
-            margin-top: 2px;
-        }
     </style>
 </head>
 
@@ -870,11 +861,6 @@
         </div>
     </div>
     <!-- 進捗率表示エリア -->
-    <div id="progress-rates">
-        <span>1F: <span id="progress-rate-1F">0%</span></span>
-        <span>4F: <span id="progress-rate-4F">0%</span></span>
-    </div>
-
     </div>
 
     <!-- 検索モーダルを追加 -->
@@ -893,26 +879,59 @@
     </div>
 
 
-
-    <!-- モーダル -->
+    <!-- 共有モーダル -->
     <div id="share-modal"
         style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;">
         <div
-            style="background: white; padding: 20px; border-radius: 8px; text-align: center; max-width: 300px; width: 90%;">
+            style="background: white; padding: 20px; border-radius: 8px; text-align: center; max-width: 300px; width: 90%; position: relative;">
             <h3 style="margin-top: 0;">スマホ・PCに送る</h3>
             <p>「行きたい」「訪問済」の状態を引き継げます！</p>
+            <!-- 進捗率表示エリア -->
+            <div style="text-align: left; margin: 15px 0; font-size: 14px;">
+                <div style="font-weight: bold; margin-bottom: 5px;">ブース訪問率：</div>
+                <div style="margin-bottom: 8px;">
+                    全体:
+                    <div style="width: 100%; background: #ddd; border-radius: 4px; margin-top: 3px;">
+                        <div id="progress-bar-total"
+                            style="width: 0%; background: #4caf50; border-radius: 4px; color: white; text-align: center; font-size: 12px; padding: 2px 0;">
+                            0% (0/0)</div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 8px;">
+                    1F:
+                    <div style="width: 100%; background: #ddd; border-radius: 4px; margin-top: 3px;">
+                        <div id="progress-bar-1F"
+                            style="width: 0%; background: #4682b4; border-radius: 4px; color: white; text-align: center; font-size: 12px; padding: 2px 0;">
+                            0% (0/0)</div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    4F:
+                    <div style="width: 100%; background: #ddd; border-radius: 4px; margin-top: 3px;">
+                        <div id="progress-bar-4F"
+                            style="width: 0%; background: #ff8c00; border-radius: 4px; color: white; text-align: center; font-size: 12px; padding: 2px 0;">
+                            0% (0/0)</div>
+                    </div>
+                </div>
+            </div>
             <div id="qrcode" style="margin: 15px auto; width: fit-content;"></div>
+            <!-- コピー通知用の要素 -->
+            <div id="copy-notification"
+                style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.7); color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; display: none; z-index: 1001;">
+                コピーしました</div>
             <input type="text" id="share-url" readonly
                 style="width: 100%; margin: 10px 0; padding: 8px; box-sizing: border-box; text-align: center;">
             <div style="display: flex; justify-content: space-between; margin-top: 10px;">
                 <button id="reset-marks"
-                    style="background: #ff6b6b; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; flex: 1; margin-right: 5px;">マークをすべてリセット</button>
+                    style="background: #ff6b6b; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; flex: 1; margin-right: 5px;">マークとメモを全部消す</button>
                 <button id="tweet-app"
                     style="background: #1da1f2; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; flex: 1; margin-left: 5px;">Xでアプリを布教</button>
             </div>
+            <div style="margin: 15px 0; font-weight: bold;">文フリ東京41で使った合計額:<br> <span id="total-amount">0</span>円</div>
+            <button id="download-memos"
+                style="background: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-top: 10px; width: 100%;">残したメモをダウンロード</button>
         </div>
     </div>
-
 
 
 
@@ -1171,6 +1190,20 @@
             </h3>
             <div id="booth-modal-genre"
                 style="margin: 10px 0; padding: 8px; border-radius: 4px; display: inline-block;"></div>
+            <!-- 追加: 一言メモ -->
+            <div style="margin: 15px 0; text-align: left;">
+                <label for="booth-modal-memo"
+                    style="display: block; margin-bottom: 5px; font-weight: bold;">一言メモ:</label>
+                <textarea id="booth-modal-memo" rows="2"
+                    style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+            </div>
+            <!-- 追加: 使った金額 -->
+            <div style="margin: 15px 0; text-align: left;">
+                <label for="booth-modal-amount"
+                    style="display: block; margin-bottom: 5px; font-weight: bold;">使った金額(円):</label>
+                <input type="number" id="booth-modal-amount" min="0"
+                    style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">
+            </div>
             <div style="display: flex; justify-content: center; gap: 10px; margin: 20px 0;">
                 <button id="booth-modal-want-to-go"
                     style="background: var(--pink-highlight); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">行きたい</button>
@@ -1179,9 +1212,9 @@
                 <button id="booth-modal-unset"
                     style="background: #ccc; color: #333; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">未指定</button>
             </div>
-
         </div>
     </div>
+
     <script>
         let isZooming = false;
         let isPanning = false;
@@ -1231,76 +1264,82 @@
             const tweetText = encodeURIComponent('文学フリマ東京41のマップアプリが便利！ ダウンロード不要 #文学フリマ東京41 https://bft41.poet.blue');
             window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
         });
-        // マークをすべてリセットボタンのクリックイベント
-        document.getElementById('reset-marks').addEventListener('click', function () {
-            if (confirm('本当にすべてのマークをリセットしますか？')) {
-                resetAllMarks();
-                alert('マークをリセットしました。');
-                location.reload();
+
+        // マークリセット時にキャッシュもクリア
+        function resetAllMarksAndMemos() {
+            if (confirm('本当にマークとメモをすべて消しますか？')) {
+                boothState = {};
+                localStorage.setItem('boothState', JSON.stringify(boothState));
+                boothMemos = {};
+                boothAmounts = {};
+                localStorage.setItem('boothMemos', JSON.stringify(boothMemos));
+                localStorage.setItem('boothAmounts', JSON.stringify(boothAmounts));
+
+                document.querySelectorAll('.booth').forEach(booth => {
+                    const id = booth.dataset.id;
+                    if (id) {
+                        booth.dataset.status = '0';
+                        booth.textContent = id.replace(/[A-Za-zあ-ん]/, '');
+                    }
+                });
+
+                document.getElementById('total-amount').textContent = '0';
+                updateStats();
+                alert('マークとメモをリセットしました。');
             }
+        }
+
+        // 「マークとメモを全部消す」ボタンのクリックイベント
+        document.getElementById('reset-marks').addEventListener('click', resetAllMarksAndMemos);
+
+        // クリップボードにコピーし、通知を表示
+        document.getElementById('share-url').addEventListener('click', function () {
+            this.select();
+            document.execCommand('copy');
+
+            const notification = document.getElementById('copy-notification');
+            notification.style.display = 'block';
+
+            // 2秒後に非表示
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 2000);
         });
+
         // ブースの状態を切り替える関数
         function toggleBooth(id, state) {
-            const current = boothState[id] || 0;
-            boothState[id] = state;
-            // 隣接ブースを検出して同じサークル名ならマーク
-            const adjacentBooths = getAdjacentBooths(id);
-            adjacentBooths.forEach(adjId => {
-                if (boothInfo[id]?.name === boothInfo[adjId]?.name) {
-                    boothState[adjId] = state;
-                    updateBoothVisually(adjId, state);
-                }
+            const circleName = boothInfo[id]?.name;
+            if (!circleName) return;
+
+            // サークルに属するすべてのブースの状態を更新
+            boothsByCircle[circleName].booths.forEach(boothId => {
+                boothState[boothId] = state;
+                updateBoothVisually(boothId, state);
             });
+
             updateStats();
             localStorage.setItem('boothState', JSON.stringify(boothState));
-            updateBoothVisually(id, state);
         }
+
 
 
         // ページ読み込み時に既存のマークをチェック
         function checkExistingMarks() {
             Object.entries(boothState).forEach(([id, status]) => {
                 if (status === 1 || status === 2) {
-                    const adjacentBooths = getAdjacentBooths(id);
-                    adjacentBooths.forEach(adjId => {
-                        if (boothInfo[id]?.name === boothInfo[adjId]?.name && !boothState[adjId]) {
-                            boothState[adjId] = status;
-                            updateBoothVisually(adjId, status);
-                        }
-                    });
+                    const circleName = boothInfo[id]?.name;
+                    if (circleName) {
+                        // サークルに属するすべてのブースの状態を更新
+                        boothsByCircle[circleName].booths.forEach(boothId => {
+                            boothState[boothId] = status;
+                            updateBoothVisually(boothId, status);
+                        });
+                    }
                 }
             });
             updateStats();
             localStorage.setItem('boothState', JSON.stringify(boothState));
         }
-
-
-        // 隣接ブースの検出ロジックを強化
-        function getAdjacentBooths(id) {
-            if (!id) return [];
-            const adjacent = [];
-            const firstChar = id.charAt(0);
-            const num = parseInt(id.substring(1), 10);
-            // 左右のブース
-            adjacent.push(`${firstChar}${String(num - 1).padStart(2, '0')}`);
-            adjacent.push(`${firstChar}${String(num + 1).padStart(2, '0')}`);
-            // 上下のブース（アルファベットまたはひらがな）
-            let prevChar, nextChar;
-            if (/^[A-Za-z]$/.test(firstChar)) {
-                prevChar = String.fromCharCode(firstChar.charCodeAt(0) - 1);
-                nextChar = String.fromCharCode(firstChar.charCodeAt(0) + 1);
-            } else if (/^[あ-ん]$/.test(firstChar)) {
-                const hiraganaOrder = 'あいうえおかきくけこさしすせそたちつてとなにぬねの';
-                const index = hiraganaOrder.indexOf(firstChar);
-                prevChar = index > 0 ? hiraganaOrder[index - 1] : null;
-                nextChar = index < hiraganaOrder.length - 1 ? hiraganaOrder[index + 1] : null;
-            }
-            if (prevChar) adjacent.push(`${prevChar}${String(num).padStart(2, '0')}`);
-            if (nextChar) adjacent.push(`${nextChar}${String(num).padStart(2, '0')}`);
-            // 存在するブースのみを返す
-            return adjacent.filter(adjId => document.querySelector(`.booth[data-id="${adjId}"]`));
-        }
-
 
 
         // ブースの見た目を更新
@@ -1313,6 +1352,47 @@
             } else {
                 el.textContent = id.replace(/[A-Za-zあ-ん]/, '');
             }
+        }
+
+        // メモと金額を管理するオブジェクト
+        let boothMemos = JSON.parse(localStorage.getItem('boothMemos')) || {};
+        let boothAmounts = JSON.parse(localStorage.getItem('boothAmounts')) || {};
+
+        // 合計金額を計算
+        function calculateTotalAmount() {
+            return Object.values(boothAmounts).reduce((sum, amount) => sum + (parseInt(amount) || 0), 0);
+        }
+
+        // メモと金額を保存
+        function saveBoothMemoAndAmount(boothId, memo, amount) {
+            boothMemos[boothId] = memo;
+            boothAmounts[boothId] = amount;
+            localStorage.setItem('boothMemos', JSON.stringify(boothMemos));
+            localStorage.setItem('boothAmounts', JSON.stringify(boothAmounts));
+            document.getElementById('total-amount').textContent = calculateTotalAmount();
+        }
+
+        // メモと金額を読み込み
+        function loadBoothMemoAndAmount(boothId) {
+            document.getElementById('booth-modal-memo').value = boothMemos[boothId] || '';
+            document.getElementById('booth-modal-amount').value = boothAmounts[boothId] || '';
+        }
+
+        // メモと金額をダウンロード
+        function downloadMemos() {
+            const data = [];
+            Object.entries(boothMemos).forEach(([id, memo]) => {
+                const amount = boothAmounts[id] || 0;
+                data.push(`ブース: ${id}\nメモ: ${memo}\n金額: ${amount}円\n\n`);
+            });
+            const blob = new Blob([data.join('')], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '文学フリマ_メモと金額.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
 
@@ -1641,78 +1721,97 @@
             setInterval(update, 1000);
             update();
         }
-        // 進捗率を計算して表示
+
         function updateProgressRate() {
-            const totalBooths1F = document.querySelectorAll('#map-container-1F .booth:not(.empty)').length;
-            const totalBooths4F = document.querySelectorAll('#map-container-4F .booth:not(.empty)').length;
-            const visited1F = document.querySelectorAll('#map-container-1F .booth[data-status="2"]').length;
-            const visited4F = document.querySelectorAll('#map-container-4F .booth[data-status="2"]').length;
-            const rate1F = totalBooths1F > 0 ? Math.round((visited1F / totalBooths1F) * 100) : 0;
-            const rate4F = totalBooths4F > 0 ? Math.round((visited4F / totalBooths4F) * 100) : 0;
-            document.getElementById('progress-rate-1F').textContent = `${rate1F}%`;
-            document.getElementById('progress-rate-4F').textContent = `${rate4F}%`;
+            const totalCircles1F = Object.values(boothsByCircle).filter(circle =>
+                /^[A-Za-z]/.test(circle.booths[0].charAt(0))
+            ).length;
+            const totalCircles4F = Object.values(boothsByCircle).filter(circle =>
+                /^[あ-ん]/.test(circle.booths[0].charAt(0))
+            ).length;
+            const totalCircles = totalCircles1F + totalCircles4F;
+
+            const visited1F = Object.values(boothsByCircle).filter(circle => {
+                return /^[A-Za-z]/.test(circle.booths[0].charAt(0)) &&
+                    circle.booths.some(id => boothState[id] === 2);
+            }).length;
+            const visited4F = Object.values(boothsByCircle).filter(circle => {
+                return /^[あ-ん]/.test(circle.booths[0].charAt(0)) &&
+                    circle.booths.some(id => boothState[id] === 2);
+            }).length;
+
+            const rate1F = totalCircles1F > 0 ? Math.round((visited1F / totalCircles1F) * 100) : 0;
+            const rate4F = totalCircles4F > 0 ? Math.round((visited4F / totalCircles4F) * 100) : 0;
+            const rateTotal = totalCircles > 0 ? Math.round(((visited1F + visited4F) / totalCircles) * 100) : 0;
+
+            document.getElementById('progress-bar-1F').style.width = `${rate1F}%`;
+            document.getElementById('progress-bar-1F').textContent = `${rate1F}% (${visited1F}/${totalCircles1F})`;
+            document.getElementById('progress-bar-4F').style.width = `${rate4F}%`;
+            document.getElementById('progress-bar-4F').textContent = `${rate4F}% (${visited4F}/${totalCircles4F})`;
+            document.getElementById('progress-bar-total').style.width = `${rateTotal}%`;
+            document.getElementById('progress-bar-total').textContent = `${rateTotal}% (${visited1F + visited4F}/${totalCircles})`;
         }
+
 
         // ブース情報モーダル表示
         async function showBoothModal(boothId) {
-            try {
-                const info = boothInfo[boothId];
-                if (info) {
-                    // 既存のハイライトを解除
-                    document.querySelectorAll('.booth.highlight').forEach(el => {
-                        el.classList.remove('highlight');
-                    });
-                    // 新しいハイライトを適用
-                    const booth = document.querySelector(`.booth[data-id="${boothId}"]`);
-                    if (booth) {
-                        booth.classList.add('highlight');
-                    }
-                    const modal = document.getElementById('booth-modal');
-                    const idEl = document.getElementById('booth-modal-id');
-                    const nameLink = document.getElementById('booth-modal-name-link');
-                    const genreEl = document.getElementById('booth-modal-genre');
-                    idEl.textContent = boothId;
-                    nameLink.textContent = info.name;
-                    nameLink.href = info.url;
-                    genreEl.textContent = info.genre.join(' / ');
-                    genreEl.style.backgroundColor = getGenreColor(info.genre[0], info.genre.slice(1).join(','));
-                    genreEl.style.color = "white";
-                    modal.style.display = 'flex';
-                    document.getElementById('booth-modal-want-to-go').onclick = (e) => {
-                        e.stopPropagation(); // 追加: イベントの伝播を停止
-                        toggleBooth(boothId, 1);
-                        updateStats();
-                        document.querySelectorAll('.booth.highlight').forEach(el => {
-                            el.classList.remove('highlight');
-                        });
-                    };
+            const circleName = boothInfo[boothId]?.name;
+            if (!circleName) return;
 
-                    document.getElementById('booth-modal-visited').onclick = (e) => {
-                        e.stopPropagation(); // 追加: イベントの伝播を停止
+            const circleData = boothsByCircle[circleName];
+            const modal = document.getElementById('booth-modal');
+            const idEl = document.getElementById('booth-modal-id');
+            const nameLink = document.getElementById('booth-modal-name-link');
+            const genreEl = document.getElementById('booth-modal-genre');
 
-                        const boothId = document.getElementById('booth-modal-id').textContent;
-                        toggleBooth(boothId, 2); // 状態を「訪問済」に更新
-                        updateStats(); // 集計を更新
-                        localStorage.setItem('boothState', JSON.stringify(boothState));
-                        document.querySelectorAll('.booth.highlight').forEach(el => {
-                            el.classList.remove('highlight');
-                        });
-                    };
-                    document.getElementById('booth-modal-unset').onclick = (e) => {
-                        e.stopPropagation(); // 追加: イベントの伝播を停止
+            idEl.textContent = circleData.booths.join(', ');
+            nameLink.textContent = circleName;
+            nameLink.href = circleData.url;
+            genreEl.textContent = circleData.genre.join(' / ');
+            genreEl.style.backgroundColor = getGenreColor(circleData.genre[0], circleData.genre.slice(1).join(','));
+            genreEl.style.color = "white";
+            modal.style.display = 'flex';
 
-                        const boothId = document.getElementById('booth-modal-id').textContent;
-                        toggleBooth(boothId, 0); // 状態を「未指定」に更新
-                        updateStats(); // 集計を更新
-                        localStorage.setItem('boothState', JSON.stringify(boothState));
-                    };
-                } else {
-                    console.log('ブース情報が見つかりません。');
-                }
-            } catch (error) {
-                return;
-            }
+            // ハイライト処理
+            document.querySelectorAll('.booth.highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+            circleData.booths.forEach(id => {
+                const booth = document.querySelector(`.booth[data-id="${id}"]`);
+                if (booth) booth.classList.add('highlight');
+            });
+
+            // メモと金額の読み込み
+            loadBoothMemoAndAmount(boothId);
+
+            // ボタンイベント
+            document.getElementById('booth-modal-want-to-go').onclick = (e) => {
+                e.stopPropagation();
+                toggleBooth(boothId, 1);
+                updateStats();
+                document.querySelectorAll('.booth.highlight').forEach(el => {
+                    el.classList.remove('highlight');
+                });
+            };
+            document.getElementById('booth-modal-visited').onclick = (e) => {
+                e.stopPropagation();
+                toggleBooth(boothId, 2);
+                updateStats();
+                document.querySelectorAll('.booth.highlight').forEach(el => {
+                    el.classList.remove('highlight');
+                });
+            };
+            document.getElementById('booth-modal-unset').onclick = (e) => {
+                e.stopPropagation();
+                toggleBooth(boothId, 0);
+                updateStats();
+                document.querySelectorAll('.booth.highlight').forEach(el => {
+                    el.classList.remove('highlight');
+                });
+            };
         }
+
+
         // ジャンルカラーを取得
         function getGenreColor(mainGenre, subGenre) {
             const mainGenreColors = {
@@ -1750,19 +1849,32 @@
             }
             return mainGenreColors[mainGenre] || "#808080";
         }
-        // booth.jsonを読み込む
+        // booths_by_circle.jsonを読み込む
         async function loadBoothInfo() {
             try {
-                const response = await fetch('booth.json');
+                const response = await fetch('booths_by_circle.json');
                 if (!response.ok) {
-                    throw new Error('booth.jsonの読み込みに失敗しました');
+                    throw new Error('booths_by_circle.jsonの読み込みに失敗しました');
                 }
-                boothInfo = await response.json();
+                boothsByCircle = await response.json();
+                // ブースIDからサークル情報を逆引きできるようにする
+                boothInfo = {};
+                Object.entries(boothsByCircle).forEach(([circleName, circleData]) => {
+                    circleData.booths.forEach(boothId => {
+                        boothInfo[boothId] = {
+                            name: circleName,
+                            url: circleData.url,
+                            genre: circleData.genre
+                        };
+                    });
+                });
             } catch (error) {
                 console.error('ブース情報の読み込みエラー:', error);
+                boothsByCircle = {};
                 boothInfo = {};
             }
         }
+
         // ブースの背景色とボーダーを白背景・黒ボーダーに統一する関数
         function resetBoothStyles() {
             document.querySelectorAll('.booth').forEach(booth => {
@@ -1772,49 +1884,8 @@
                 booth.style.borderStyle = 'solid';
             });
         }
-        // グループ化されたブースをキャッシュ
-        let boothGroupsCache = {};
 
-        function getBoothGroups() {
-            if (Object.keys(boothGroupsCache).length > 0) {
-                return boothGroupsCache;
-            }
 
-            const groups = {};
-            const visited = new Set();
-
-            document.querySelectorAll('.booth').forEach(booth => {
-                const id = booth.dataset.id;
-                if (!id || visited.has(id)) return;
-
-                const name = boothInfo[id]?.name;
-                if (!name) return;
-
-                const group = [id];
-                const queue = [id];
-                visited.add(id);
-
-                while (queue.length > 0) {
-                    const currentId = queue.shift();
-                    const adjacentBooths = getAdjacentBooths(currentId);
-
-                    adjacentBooths.forEach(adjId => {
-                        if (!visited.has(adjId) && boothInfo[adjId]?.name === name) {
-                            group.push(adjId);
-                            visited.add(adjId);
-                            queue.push(adjId);
-                        }
-                    });
-                }
-
-                if (group.length > 0) {
-                    groups[name] = group;
-                }
-            });
-
-            boothGroupsCache = groups;
-            return groups;
-        }
 
         // 集計エリアの初期化
         function updateStats() {
@@ -1823,33 +1894,21 @@
             const wantToGo4F = new Set();
             const visited4F = new Set();
 
-            // すべてのブースを走査
-            document.querySelectorAll('.booth').forEach(booth => {
-                const id = booth.dataset.id;
-                const status = booth.dataset.status;
-                if (!id) return; // idがundefinedの場合はスキップ
+            Object.entries(boothsByCircle).forEach(([circleName, circleData]) => {
+                const floor = /^[A-Za-z]/.test(circleData.booths[0].charAt(0)) ? '1F' : '4F';
+                const hasWantToGo = circleData.booths.some(id => boothState[id] === 1);
+                const hasVisited = circleData.booths.some(id => boothState[id] === 2);
 
-                const floor = /^[A-Za-z]/.test(id.charAt(0)) ? '1F' : '4F';
-
-                if (status === '1') {
-                    // 同じサークル名の隣接ブースは1つとしてカウント
-                    const name = boothInfo[id]?.name;
-                    if (name) {
-                        const key = `${name}-${floor}`;
-                        if (floor === '1F') wantToGo1F.add(key);
-                        else wantToGo4F.add(key);
-                    }
-                } else if (status === '2') {
-                    const name = boothInfo[id]?.name;
-                    if (name) {
-                        const key = `${name}-${floor}`;
-                        if (floor === '1F') visited1F.add(key);
-                        else visited4F.add(key);
-                    }
+                if (hasWantToGo) {
+                    if (floor === '1F') wantToGo1F.add(circleName);
+                    else wantToGo4F.add(circleName);
+                }
+                if (hasVisited) {
+                    if (floor === '1F') visited1F.add(circleName);
+                    else visited4F.add(circleName);
                 }
             });
 
-            // カウントを更新
             document.querySelector('.count[data-floor="1F"][data-status="1"]').textContent = wantToGo1F.size;
             document.querySelector('.count[data-floor="1F"][data-status="2"]').textContent = visited1F.size;
             document.querySelector('.count[data-floor="4F"][data-status="1"]').textContent = wantToGo4F.size;
@@ -2021,7 +2080,11 @@
             }
 
             let deferredPrompt;
-
+            // 合計金額を表示
+            document.getElementById('total-amount').textContent = calculateTotalAmount();
+            // ダウンロードボタンのイベント
+            document.getElementById('download-memos').addEventListener('click', downloadMemos);
+            // 既存の初期化コード
             checkExistingMarks();
 
         };
@@ -2174,7 +2237,10 @@
                     height: 200,
                 });
             }
+            // 進捗率を更新
+            updateProgressRate();
         });
+
         // 共有モーダルの外側タップで閉じる
         document.getElementById('share-modal').addEventListener('click', function (e) {
             if (e.target === this) {
@@ -2281,26 +2347,36 @@
             wantToGoList.innerHTML = '';
             visitedList.innerHTML = '';
 
-            // 該当フロアのブースをフィルタリング
-            const booths = document.querySelectorAll(`#map-container-${floor} .booth`);
-            booths.forEach(booth => {
-                const id = booth.dataset.id;
-                const status = booth.dataset.status;
-                const name = booth.dataset.name || id;
-                const listItem = document.createElement('li');
-                listItem.textContent = `${id}: ${name}`;
-                listItem.dataset.id = id;
-                listItem.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    zoomToBooth(id, floor);
-                });
-                if (status === '1') {
-                    wantToGoList.appendChild(listItem);
-                } else if (status === '2') {
-                    visitedList.appendChild(listItem);
+            Object.entries(boothsByCircle).forEach(([circleName, circleData]) => {
+                const is4F = /^[あ-ん]/.test(circleData.booths[0].charAt(0));
+                if ((floor === '1F' && !is4F) || (floor === '4F' && is4F)) {
+                    const hasWantToGo = circleData.booths.some(id => boothState[id] === 1);
+                    const hasVisited = circleData.booths.some(id => boothState[id] === 2);
+
+                    if (hasWantToGo) {
+                        const li = document.createElement('li');
+                        li.textContent = `${circleName} (${circleData.booths.join(', ')})`;
+                        li.dataset.id = circleData.booths[0];
+                        li.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            zoomToBooth(circleData.booths[0], floor);
+                        });
+                        wantToGoList.appendChild(li);
+                    }
+                    if (hasVisited) {
+                        const li = document.createElement('li');
+                        li.textContent = `${circleName} (${circleData.booths.join(', ')})`;
+                        li.dataset.id = circleData.booths[0];
+                        li.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            zoomToBooth(circleData.booths[0], floor);
+                        });
+                        visitedList.appendChild(li);
+                    }
                 }
             });
         }
+
 
         function zoomToBooth(boothId, floor) {
             // フロアを自動判定（1F: A-W、4F: あ-ん）
@@ -2402,23 +2478,28 @@
             const query = this.value.trim().toLowerCase();
             const resultsList = document.getElementById('search-results-list');
             resultsList.innerHTML = '';
+
             if (query.length === 0) {
                 document.getElementById('search-results').style.display = 'none';
                 return;
             }
 
-            // ブース情報から検索
             const matches = [];
-            Object.entries(boothInfo).forEach(([id, info]) => {
-                if (id.toLowerCase().includes(query) || (info.name && info.name.toLowerCase().includes(query))) {
-                    matches.push({ id, name: info.name || id });
+            Object.entries(boothsByCircle).forEach(([circleName, circleData]) => {
+                if (circleName.toLowerCase().includes(query) ||
+                    circleData.booths.some(id => id.toLowerCase().includes(query))) {
+                    matches.push({
+                        id: circleData.booths[0],
+                        name: circleName,
+                        booths: circleData.booths
+                    });
                 }
             });
 
             if (matches.length > 0) {
                 matches.forEach(match => {
                     const li = document.createElement('li');
-                    li.textContent = `${match.id}: ${match.name}`;
+                    li.textContent = `${match.name} (${match.booths.join(', ')})`;
                     li.dataset.id = match.id;
                     li.style.padding = '8px';
                     li.style.cursor = 'pointer';
@@ -2430,7 +2511,6 @@
                         zoomToBooth(match.id, floor);
                         document.getElementById('search-modal').style.display = 'none';
                     });
-
                     resultsList.appendChild(li);
                 });
                 document.getElementById('search-results').style.display = 'block';
