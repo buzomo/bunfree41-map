@@ -1346,20 +1346,16 @@
 
         // ページ読み込み時に既存のマークをチェック
         function checkExistingMarks() {
+            // localStorageからデータを読み込む（ハッシュ処理で上書きされているはず）
+            const savedState = localStorage.getItem('boothState');
+            if (savedState) {
+                boothState = JSON.parse(savedState);
+            }
+            // ブースの状態を反映
             Object.entries(boothState).forEach(([id, status]) => {
-                if (status === 1 || status === 2) {
-                    const circleName = boothInfo[id]?.name;
-                    if (circleName) {
-                        // サークルに属するすべてのブースの状態を更新
-                        boothsByCircle[circleName].booths.forEach(boothId => {
-                            boothState[boothId] = status;
-                            updateBoothVisually(boothId, status);
-                        });
-                    }
-                }
+                updateBoothVisually(id, status);
             });
             updateStats();
-            localStorage.setItem('boothState', JSON.stringify(boothState));
         }
 
 
@@ -1978,7 +1974,55 @@
 
         // 初期化
         window.onload = async function () {
+            // 1. PWAのインストールプロンプトを無効化（ページ再読み込みを防ぐ）
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                return false;
+            });
+
+            // 2. ハッシュ処理を最優先で実行
+            const hash = window.location.hash;
+            console.log('ハッシュデータ:', hash);
+
+            if (hash.startsWith('#mydata=')) {
+                console.log('mydataモードで復元を試みます');
+                const compressedData = hash.substring(8);
+                console.log('圧縮データ:', compressedData);
+                try {
+                    const decompressedData = LZString.decompressFromBase64(compressedData);
+                    console.log('解凍データ:', decompressedData);
+                    if (decompressedData) {
+                        boothState = JSON.parse(decompressedData);
+                        localStorage.setItem('boothState', JSON.stringify(boothState)); // localStorageを上書き
+                        console.log('ハッシュデータをlocalStorageに保存しました');
+                    }
+                } catch (e) {
+                    console.error('データの復元に失敗しました:', e);
+                }
+            } else if (hash.startsWith('#showdata=')) {
+                console.log('showdataモードで復元を試みます');
+                isReadOnly = true;
+                showReadOnlyNotice();
+                if (confirm('このURLには共有データが含まれています。復元しますか？')) {
+                    const compressedData = hash.substring(10);
+                    console.log('圧縮データ:', compressedData);
+                    try {
+                        const decompressedData = LZString.decompressFromBase64(compressedData);
+                        console.log('解凍データ:', decompressedData);
+                        if (decompressedData) {
+                            boothState = JSON.parse(decompressedData);
+                            console.log('ハッシュデータを一時的に保存しました');
+                        }
+                    } catch (e) {
+                        console.error('データの復元に失敗しました:', e);
+                    }
+                }
+            }
+
+            // 3. boothsByCircleを読み込む
             await loadBoothInfo();
+
+            // 4. 地図の初期化
             const islandsContainer1F = document.getElementById('islands-container-1F');
             const islandsContainer4F = document.getElementById('islands-container-4F');
             const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W'];
@@ -2001,6 +2045,7 @@
                 islandsContainer1F.appendChild(islandRow);
             });
             islandsContainer1F.appendChild(createXRow());
+
             const hiraganaLetters = ['あ', 'い', 'う', 'え', 'お', 'か', 'き', 'く', 'け', 'こ', 'さ', 'し', 'す', 'せ', 'そ', 'た', 'ち', 'つ', 'て', 'と', 'な', 'に', 'ぬ', 'ね'];
             letters.forEach((letter, index) => {
                 if (index < hiraganaLetters.length) {
@@ -2041,7 +2086,8 @@
                     }
                 }
             });
-            // ブースのイベントリスナーを設定
+
+            // 5. ブースのイベントリスナーを設定
             document.querySelectorAll('.booth').forEach(booth => {
                 const id = booth.dataset.id;
                 if (boothInfo[id]) {
@@ -2063,10 +2109,13 @@
                 booth.addEventListener('mouseover', () => booth.textContent = id);
                 booth.addEventListener('mouseout', () => booth.textContent = id.replace(/[A-Za-zあ-ん]/, ''));
             });
+
+            // 6. ハッシュデータがあれば、ブースの状態を反映
             Object.entries(boothState).forEach(([id, status]) => {
                 updateBoothVisually(id, status);
             });
-            // ステータス部分のクリックイベントを追加
+
+            // 7. ステータス部分のクリックイベントを追加
             document.querySelectorAll('.tab-stats').forEach(stats => {
                 stats.addEventListener('click', function (e) {
                     e.stopPropagation();
@@ -2075,7 +2124,7 @@
                 });
             });
 
-            // タブのクリックイベントは通常の切り替えのみにする
+            // 8. タブのクリックイベント
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', function () {
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -2090,7 +2139,7 @@
                 });
             });
 
-
+            // 9. タブの初期状態を設定
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
                 if (tab.dataset.floor === activeTab) {
@@ -2104,15 +2153,13 @@
                 }
             });
 
+            // 10. モーダルのクリックイベント
             document.getElementById('booth-modal').addEventListener('click', (e) => {
                 if (e.target === document.getElementById('booth-modal')) {
-                    // 入力内容を保存
                     const boothId = document.getElementById('booth-modal-id').textContent.split(',')[0];
                     const memo = document.getElementById('booth-modal-memo').value;
                     const amount = document.getElementById('booth-modal-amount').value;
                     saveBoothMemoAndAmount(boothId, memo, amount);
-
-                    // モーダルを非表示に
                     document.getElementById('booth-modal').style.display = 'none';
                     document.querySelectorAll('.booth.highlight').forEach(el => {
                         el.classList.remove('highlight');
@@ -2120,20 +2167,29 @@
                 }
             });
 
+            // 11. スクロールコンテナの初期化
             document.querySelectorAll('.scroll-container').forEach(container => {
                 container.style.transform = 'scale(0.7)';
                 container.style.left = '0';
                 container.style.top = '0';
             });
+
+            // 12. タイマーの開始
             startTimer();
+
+            // 13. 集計エリアの更新
             updateStats();
+
+            // 14. ジャンル色分けのトグル
             document.getElementById('toggle-genre-colors').addEventListener('click', toggleGenreColors);
             if (!isGenreColorEnabled) {
                 resetBoothStyles();
             }
-            // タッチ/ズーム/パン操作の初期化
+
+            // 15. タッチ/ズーム/パン操作の初期化
             initTouchZoomPan();
-            // ブースのクリックイベントを読み取り専用モードで無効化
+
+            // 16. 読み取り専用モードの無効化
             document.querySelectorAll('.booth').forEach(booth => {
                 booth.addEventListener('click', function (e) {
                     if (window.isReadOnly) {
@@ -2144,67 +2200,25 @@
                 });
             });
 
-            // サービスワーカーの登録
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/sw.js')
-                        .then((registration) => {
-                            console.log('ServiceWorker登録成功:', registration.scope);
-                            registration.update(); // 更新を強制
-                        })
-                        .catch((error) => {
-                            console.log('ServiceWorker登録失敗:', error);
-                        });
-                });
-            }
-
-            let deferredPrompt;
-            // 合計金額を表示
+            // 17. 合計金額の表示
             document.getElementById('total-amount').textContent = calculateTotalAmount();
-            // ダウンロードボタンのイベント
+
+            // 18. ダウンロードボタンのイベント
             document.getElementById('download-memos').addEventListener('click', downloadMemos);
-            // 既存の初期化コード
-            checkExistingMarks();
 
-            // ハッシュ処理を追加
-            const hash = window.location.hash;
-            if (hash.startsWith('#mydata=')) {
-                const compressedData = hash.substring(8);
-                try {
-                    const decompressedData = LZString.decompressFromBase64(compressedData);
-                    if (decompressedData) {
-                        boothState = JSON.parse(decompressedData);
-                        Object.entries(boothState).forEach(([id, status]) => {
-                            updateBoothVisually(id, status);
-                        });
-                        updateStats();
-                    }
-                } catch (e) {
-                    console.error('データの復元に失敗しました:', e);
-                }
-                window.history.replaceState(null, null, window.location.pathname + window.location.search);
-            } else if (hash.startsWith('#showdata=')) {
-                isReadOnly = true;
-                showReadOnlyNotice();
-                if (confirm('このURLには共有データが含まれています。復元しますか？')) {
-                    const compressedData = hash.substring(10);
-                    try {
-                        const decompressedData = LZString.decompressFromBase64(compressedData);
-                        if (decompressedData) {
-                            boothState = JSON.parse(decompressedData);
-                            Object.entries(boothState).forEach(([id, status]) => {
-                                updateBoothVisually(id, status);
-                            });
-                            updateStats();
-                        }
-                    } catch (e) {
-                        console.error('データの復元に失敗しました:', e);
-                    }
-                }
-                window.history.replaceState(null, null, window.location.pathname + window.location.search);
+            // 19. Service Workerの登録（最後に実行）
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('ServiceWorker登録成功:', registration.scope);
+                        registration.update();
+                    })
+                    .catch((error) => {
+                        console.log('ServiceWorker登録失敗:', error);
+                    });
             }
-
         };
+
         // タッチ/ズーム/パン操作の初期化
         function initTouchZoomPan() {
             const mapContainers = [document.getElementById('map-container-1F'), document.getElementById('map-container-4F')];
