@@ -832,6 +832,12 @@
         .xc04-4bx3.xc-block-with-letter>.leftwall-block {
             margin-bottom: 37px;
         }
+
+        .share-tab.active {
+            background: #e0e0e0;
+            font-weight: bold;
+            border-bottom: 2px solid #4caf50;
+        }
     </style>
 </head>
 
@@ -891,6 +897,14 @@
             style="background: white; padding: 20px; border-radius: 8px; text-align: center; max-width: 300px; width: 90%; position: relative;">
             <h3 style="margin-top: 0;">スマホ・PCに送る</h3>
             <p>「行きたい」「訪問済」の状態を引き継げます！</p>
+            <!-- 共有モーダル内のURLタイプ選択タブ -->
+            <div style="display: flex; margin-bottom: 15px; border-bottom: 1px solid #ddd;">
+                <div class="share-tab active" data-type="mydata"
+                    style="flex: 1; text-align: center; padding: 8px; cursor: pointer; background: #f0f0f0;">自分用</div>
+                <div class="share-tab" data-type="showdata"
+                    style="flex: 1; text-align: center; padding: 8px; cursor: pointer;">SNS共有用</div>
+            </div>
+
             <!-- 進捗率表示エリア -->
             <div style="text-align: left; margin: 15px 0; font-size: 14px;">
                 <div style="font-weight: bold; margin-bottom: 5px;">ブース訪問率：</div>
@@ -1221,6 +1235,8 @@
     </div>
 
     <script>
+        let isReadOnly = false;
+
         let isZooming = false;
         let isPanning = false;
         let isDragging = false;
@@ -1934,6 +1950,14 @@
             document.querySelector('.count[data-floor="4F"][data-status="2"]').textContent = visited4F.size;
         }
 
+        // タブ切り替えイベント
+        document.querySelectorAll('.share-tab').forEach(tab => {
+            tab.addEventListener('click', function () {
+                document.querySelectorAll('.share-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
 
         // 初期化
         window.onload = async function () {
@@ -2092,6 +2116,16 @@
             }
             // タッチ/ズーム/パン操作の初期化
             initTouchZoomPan();
+            // ブースのクリックイベントを読み取り専用モードで無効化
+            document.querySelectorAll('.booth').forEach(booth => {
+                booth.addEventListener('click', function (e) {
+                    if (window.isReadOnly) {
+                        e.stopPropagation();
+                        alert('読み取り専用モードです。自分のデータを見るには「自分のデータを見る」をクリックしてください。');
+                        return;
+                    }
+                });
+            });
 
             // サービスワーカーの登録
             if ('serviceWorker' in navigator) {
@@ -2253,10 +2287,14 @@
         }
         // 共有ボタンのクリックイベント
         document.getElementById('share-button').addEventListener('click', function () {
+            const activeTab = document.querySelector('.share-tab.active').dataset.type;
+            const hashPrefix = `#${activeTab}=`;
             const compressedData = LZString.compressToBase64(JSON.stringify(boothState));
-            const shareUrl = `${window.location.origin}${window.location.pathname}#data=${compressedData}`;
+            const shareUrl = `${window.location.origin}${window.location.pathname}${hashPrefix}${compressedData}`;
+
             document.getElementById('share-modal').style.display = 'flex';
             document.getElementById('share-url').value = shareUrl;
+
             if (typeof QRCode !== 'undefined') {
                 document.getElementById('qrcode').innerHTML = '';
                 new QRCode(document.getElementById('qrcode'), {
@@ -2265,9 +2303,9 @@
                     height: 200,
                 });
             }
-            // 進捗率を更新
             updateProgressRate();
         });
+
 
         // 共有モーダルの外側タップで閉じる
         document.getElementById('share-modal').addEventListener('click', function (e) {
@@ -2276,11 +2314,14 @@
             }
         });
         // ページ読み込み時にURLからデータを復元
+        // ページ読み込み時にハッシュを処理
         window.addEventListener('load', function () {
             loadQRCodeLibrary();
             const hash = window.location.hash;
-            if (hash.startsWith('#data=')) {
-                const compressedData = hash.substring(6);
+
+            if (hash.startsWith('#mydata=')) {
+                // 自分用: 自動で復元
+                const compressedData = hash.substring(8);
                 try {
                     const decompressedData = LZString.decompressFromBase64(compressedData);
                     if (decompressedData) {
@@ -2293,8 +2334,61 @@
                 } catch (e) {
                     console.error('データの復元に失敗しました:', e);
                 }
+                window.history.replaceState(null, null, window.location.pathname + window.location.search);
+
+            } else if (hash.startsWith('#showdata=')) {
+                // SNS共有用: 読み取り専用モード
+                isReadOnly = true;
+                showReadOnlyNotice();
+
+                if (confirm('このURLには共有データが含まれています。復元しますか？')) {
+                    const compressedData = hash.substring(10);
+                    try {
+                        const decompressedData = LZString.decompressFromBase64(compressedData);
+                        if (decompressedData) {
+                            boothState = JSON.parse(decompressedData);
+                            Object.entries(boothState).forEach(([id, status]) => {
+                                updateBoothVisually(id, status);
+                            });
+                            updateStats();
+                        }
+                    } catch (e) {
+                        console.error('データの復元に失敗しました:', e);
+                    }
+                }
+                window.history.replaceState(null, null, window.location.pathname + window.location.search);
+            }
+
+            // 読み取り専用モードの表示
+            function showReadOnlyNotice() {
+                const noticeBar = document.createElement('div');
+                noticeBar.id = 'read-only-notice';
+                noticeBar.style.position = 'fixed';
+                noticeBar.style.bottom = '0';
+                noticeBar.style.left = '0';
+                noticeBar.style.width = '100%';
+                noticeBar.style.height = '25px';
+                noticeBar.style.backgroundColor = '#ffeb3b';
+                noticeBar.style.textAlign = 'center';
+                noticeBar.style.lineHeight = '25px';
+                noticeBar.style.fontSize = '12px';
+                noticeBar.style.zIndex = '1000';
+                noticeBar.style.borderTop = '1px solid #ffc107';
+                noticeBar.innerHTML = `
+            これはほかの人のデータです（読み取り専用）
+            <button id="show-my-data" style="margin-left: 10px; background: none; border: none; color: #1976d2; cursor: pointer; font-size: 12px;">
+                自分のデータを見る
+            </button>
+        `;
+                document.body.appendChild(noticeBar);
+
+                // 「自分のデータを見る」ボタン
+                document.getElementById('show-my-data').addEventListener('click', function () {
+                    window.location.href = window.location.pathname;
+                });
             }
         });
+
 
         // タブのダブルクリックイベントを追加
         document.querySelectorAll('.tab').forEach(tab => {
