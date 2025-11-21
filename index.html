@@ -1251,8 +1251,28 @@
         const OPEN_TIME = "12:00";
         const CLOSE_TIME = "17:00";
         // ブースの状態を管理
-        let boothState = JSON.parse(localStorage.getItem('boothState')) || {};
-        // タブの状態を管理
+        let boothState = {};
+        const hash = window.location.hash;
+        if (hash.startsWith('#mydata=')) {
+            const compressedData = hash.substring(8);
+            try {
+                const decompressedData = LZString.decompressFromBase64(compressedData);
+                if (decompressedData) {
+                    boothState = JSON.parse(decompressedData);
+                    localStorage.setItem('boothState', decompressedData); // localStorageを上書き
+                }
+            } catch (e) {
+                console.error('ハッシュデータの解凍に失敗:', e);
+            }
+        } else if (hash.startsWith('#showdata=')) {
+            // 同様に処理
+        } else {
+            // ハッシュがない場合はlocalStorageから読み込む
+            const savedState = localStorage.getItem('boothState');
+            if (savedState) {
+                boothState = JSON.parse(savedState);
+            }
+        }        // タブの状態を管理
         const activeTab = localStorage.getItem('activeTab') || '1F';
         // マークをすべてリセットする関数
         function resetAllMarks() {
@@ -1974,16 +1994,20 @@
 
         // 初期化
         window.onload = async function () {
-            // 1. PWAのインストールプロンプトを無効化（ページ再読み込みを防ぐ）
+            // 1. PWAのインストールプロンプトを無効化
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 return false;
             });
 
-            // 2. ハッシュ処理を最優先で実行
+            // 2. boothsByCircleを先に読み込む
+            await loadBoothInfo();
+
+            // 3. ハッシュデータを処理
             const hash = window.location.hash;
             console.log('ハッシュデータ:', hash);
 
+            let boothState = {};
             if (hash.startsWith('#mydata=')) {
                 console.log('mydataモードで復元を試みます');
                 const compressedData = hash.substring(8);
@@ -1993,7 +2017,7 @@
                     console.log('解凍データ:', decompressedData);
                     if (decompressedData) {
                         boothState = JSON.parse(decompressedData);
-                        localStorage.setItem('boothState', JSON.stringify(boothState)); // localStorageを上書き
+                        localStorage.setItem('boothState', decompressedData);
                         console.log('ハッシュデータをlocalStorageに保存しました');
                     }
                 } catch (e) {
@@ -2017,10 +2041,13 @@
                         console.error('データの復元に失敗しました:', e);
                     }
                 }
+            } else {
+                // ハッシュがない場合はlocalStorageから読み込む
+                const savedState = localStorage.getItem('boothState');
+                if (savedState) {
+                    boothState = JSON.parse(savedState);
+                }
             }
-
-            // 3. boothsByCircleを読み込む
-            await loadBoothInfo();
 
             // 4. 地図の初期化
             const islandsContainer1F = document.getElementById('islands-container-1F');
@@ -2086,8 +2113,13 @@
                     }
                 }
             });
+            // 5. ブースの状態を反映
+            Object.entries(boothState).forEach(([id, status]) => {
+                updateBoothVisually(id, status);
+            });
 
-            // 5. ブースのイベントリスナーを設定
+            // 6. その他の初期化処理
+            // ブースのイベントリスナーを設定
             document.querySelectorAll('.booth').forEach(booth => {
                 const id = booth.dataset.id;
                 if (boothInfo[id]) {
