@@ -2166,6 +2166,44 @@
             // 既存の初期化コード
             checkExistingMarks();
 
+            // ハッシュ処理を追加
+            const hash = window.location.hash;
+            if (hash.startsWith('#mydata=')) {
+                const compressedData = hash.substring(8);
+                try {
+                    const decompressedData = LZString.decompressFromBase64(compressedData);
+                    if (decompressedData) {
+                        boothState = JSON.parse(decompressedData);
+                        Object.entries(boothState).forEach(([id, status]) => {
+                            updateBoothVisually(id, status);
+                        });
+                        updateStats();
+                    }
+                } catch (e) {
+                    console.error('データの復元に失敗しました:', e);
+                }
+                window.history.replaceState(null, null, window.location.pathname + window.location.search);
+            } else if (hash.startsWith('#showdata=')) {
+                isReadOnly = true;
+                showReadOnlyNotice();
+                if (confirm('このURLには共有データが含まれています。復元しますか？')) {
+                    const compressedData = hash.substring(10);
+                    try {
+                        const decompressedData = LZString.decompressFromBase64(compressedData);
+                        if (decompressedData) {
+                            boothState = JSON.parse(decompressedData);
+                            Object.entries(boothState).forEach(([id, status]) => {
+                                updateBoothVisually(id, status);
+                            });
+                            updateStats();
+                        }
+                    } catch (e) {
+                        console.error('データの復元に失敗しました:', e);
+                    }
+                }
+                window.history.replaceState(null, null, window.location.pathname + window.location.search);
+            }
+
         };
         // タッチ/ズーム/パン操作の初期化
         function initTouchZoomPan() {
@@ -2334,47 +2372,6 @@
         // ページ読み込み時にハッシュを処理
         window.addEventListener('load', function () {
             loadQRCodeLibrary();
-            const hash = window.location.hash;
-
-            if (hash.startsWith('#mydata=')) {
-                // 自分用: 自動で復元
-                const compressedData = hash.substring(8);
-                try {
-                    const decompressedData = LZString.decompressFromBase64(compressedData);
-                    if (decompressedData) {
-                        boothState = JSON.parse(decompressedData);
-                        Object.entries(boothState).forEach(([id, status]) => {
-                            updateBoothVisually(id, status);
-                        });
-                        updateStats();
-                    }
-                } catch (e) {
-                    console.error('データの復元に失敗しました:', e);
-                }
-                window.history.replaceState(null, null, window.location.pathname + window.location.search);
-
-            } else if (hash.startsWith('#showdata=')) {
-                // SNS共有用: 読み取り専用モード
-                isReadOnly = true;
-                showReadOnlyNotice();
-
-                if (confirm('このURLには共有データが含まれています。復元しますか？')) {
-                    const compressedData = hash.substring(10);
-                    try {
-                        const decompressedData = LZString.decompressFromBase64(compressedData);
-                        if (decompressedData) {
-                            boothState = JSON.parse(decompressedData);
-                            Object.entries(boothState).forEach(([id, status]) => {
-                                updateBoothVisually(id, status);
-                            });
-                            updateStats();
-                        }
-                    } catch (e) {
-                        console.error('データの復元に失敗しました:', e);
-                    }
-                }
-                window.history.replaceState(null, null, window.location.pathname + window.location.search);
-            }
 
             // 読み取り専用モードの表示
             function showReadOnlyNotice() {
