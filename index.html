@@ -1950,12 +1950,31 @@
             document.querySelector('.count[data-floor="4F"][data-status="2"]').textContent = visited4F.size;
         }
 
-        // タブ切り替えイベント
+        // 共有モーダル内のタブ切り替えイベント
         document.querySelectorAll('.share-tab').forEach(tab => {
             tab.addEventListener('click', function () {
                 document.querySelectorAll('.share-tab').forEach(t => t.classList.remove('active'));
                 this.classList.add('active');
-            });
+
+                // 選択されたタブのタイプを取得
+                const type = this.dataset.type;
+                // 現在のboothStateを圧縮してURLに反映
+                const compressedData = LZString.compressToBase64(JSON.stringify(boothState));
+                const newHash = `#${type}=${compressedData}`;
+                // URLを更新（ページ遷移なし）
+                window.history.replaceState(null, null, newHash);
+
+                // QRコードを更新
+                const shareUrl = `${window.location.origin}${window.location.pathname}${newHash}`;
+                document.getElementById('share-url').value = shareUrl;
+                if (typeof QRCode !== 'undefined') {
+                    document.getElementById('qrcode').innerHTML = '';
+                    new QRCode(document.getElementById('qrcode'), {
+                        text: shareUrl,
+                        width: 200,
+                        height: 200,
+                    });
+                });
         });
 
 
