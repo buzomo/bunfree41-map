@@ -2340,22 +2340,26 @@
                     isDragging = true;
                     startX = e.clientX;
                     startY = e.clientY;
+                    // 現在のスクロール位置を取得（数値として保存）
                     scrollLeft = parseFloat(scrollContainer.style.left) || 0;
                     scrollTop = parseFloat(scrollContainer.style.top) || 0;
                     scrollContainer.style.cursor = 'grabbing';
                     e.preventDefault();
                 });
+
                 // マウスムーブ
                 document.addEventListener('mousemove', function (e) {
                     if (isDragging) {
                         const x = e.clientX;
                         const y = e.clientY;
-                        const walkX = (x - startX) + scrollLeft;
-                        const walkY = (y - startY) + scrollTop;
+                        // 移動距離を計算し、スクロール位置を更新
+                        const walkX = scrollLeft + (x - startX);
+                        const walkY = scrollTop + (y - startY);
                         scrollContainer.style.left = `${walkX}px`;
                         scrollContainer.style.top = `${walkY}px`;
                     }
                 });
+
                 // マウスアップ
                 document.addEventListener('mouseup', function () {
                     isDragging = false;
@@ -2612,16 +2616,12 @@
             const boothCenterX = boothRect.left + boothRect.width / 2 - containerRect.left;
             const boothCenterY = boothRect.top + boothRect.height / 2 - containerRect.top;
 
-            // 現在のスクロール位置を取得
-            const currentLeft = parseFloat(scrollContainer.style.left) || 0;
-            const currentTop = parseFloat(scrollContainer.style.top) || 0;
+            // 新しいスクロール位置を計算（ズーム後の座標系に合わせる）
+            const newLeft = containerCenterX - (boothCenterX * newScale);
+            const newTop = containerCenterY - (boothCenterY * newScale);
 
-            // 新しいスクロール位置を計算
-            const newLeft = (currentLeft + (containerCenterX / currentScale)) - (boothCenterX * newScale / currentScale);
-            const newTop = (currentTop + (containerCenterY / currentScale)) - (boothCenterY * newScale / currentScale);
-
-            // ズームとスクロールを適用
-            scrollContainer.style.transition = 'transform 0.3s ease, left 0.3s ease, top 0.3s ease';
+            // トランザクションを一時的に無効化
+            scrollContainer.style.transition = 'none';
             scrollContainer.style.transform = `scale(${newScale})`;
             scrollContainer.style.left = `${newLeft}px`;
             scrollContainer.style.top = `${newTop}px`;
@@ -2635,14 +2635,19 @@
                 booth.style.backgroundColor = 'yellow';
             }
             booth.style.boxShadow = '0 0 10px 5px rgba(255, 255, 0, 0.7)';
-            resetBoothStyles();
 
             // タブをアクティブに
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
             });
             document.querySelector(`.tab[data-floor="${floor}"]`).classList.add('active');
+
+            // 短いタイムアウト後にトランザクションを復元（パン操作をスムーズに）
+            setTimeout(() => {
+                scrollContainer.style.transition = 'transform 0.3s ease, left 0.3s ease, top 0.3s ease';
+            }, 50);
         }
+
         // タイトルエリアにクリックイベントを追加
         document.getElementById('timer-area').addEventListener('click', function (e) {
             if (e.target.classList.contains('title') || e.target === this) {
