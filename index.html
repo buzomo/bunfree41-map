@@ -850,6 +850,11 @@
                 style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; padding: 0;">🎨</button>
             <span style="color: white; font-size: 10px; white-space: nowrap;">ジャンル色分</span>
         </div>
+        <div id="read-only-notice"
+            style="display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: #ffeb3b; text-align: center; padding: 8px; font-size: 12px; z-index: 1000;">
+            これは閲覧専用モードです。編集するには<a href="https://bft41.poet.blue" style="color: #1976d2;">自分のデータを開いてください</a>。
+        </div>
+
         <div class="title" style="margin: 0 auto;">文学フリマ東京41</div>
         <div id="timer-display" class="timer-text"></div>
         <div id="progress-container">
@@ -1305,15 +1310,68 @@
             window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
         });
 
+        async function getOrCreateToken() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let token = urlParams.get('token');
+            const isReadOnly = urlParams.get('readonly') === 'true';
+
+            if (!token) {
+                const response = await fetch('https://bft41-data.poet.blue/api/token');
+                const { privateToken } = await response.json();
+                window.location.search = `?token=${privateToken}`;
+                return { token: privateToken, isReadOnly: false };
+            }
+
+            return { token, isReadOnly };
+        }
+
+        // データ取得
+        async function fetchData(token) {
+            const response = await fetch(`https://bft41-data.poet.blue/api/data?token=${token}`);
+            const { data, isReadOnly } = await response.json();
+            window.isReadOnly = isReadOnly;
+            return data;
+        }
+
+        // データ保存
+        async function saveData(token, data) {
+            if (window.isReadOnly) {
+                alert("閲覧専用モードです。編集するには自分のデータを開いてください。");
+                return;
+            }
+
+            await fetch('https://bft41-data.poet.blue/api/data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, data }),
+            });
+        }
+
+        // 共有URLの生成
+        async function generateShareToken(privateToken) {
+            const response = await fetch('https://bft41-data.poet.blue/api/share', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ privateToken }),
+            });
+            const { publicToken } = await response.json();
+            return `https://bft41.poet.blue?token=${publicToken}&readonly=true`;
+        }
+
         // マークリセット時にキャッシュもクリア
         function resetAllMarksAndMemos() {
             if (confirm('本当にマークとメモをすべて消しますか？')) {
                 boothState = {};
-                localStorage.setItem('boothState', JSON.stringify(boothState));
                 boothMemos = {};
                 boothAmounts = {};
-                localStorage.setItem('boothMemos', JSON.stringify(boothMemos));
-                localStorage.setItem('boothAmounts', JSON.stringify(boothAmounts));
+
+                // データを保存
+                const data = {
+                    boothState,
+                    boothMemos,
+                    boothAmounts
+                };
+                saveData(currentToken, data);
 
                 document.querySelectorAll('.booth').forEach(booth => {
                     const id = booth.dataset.id;
@@ -1328,6 +1386,7 @@
                 alert('マークとメモをリセットしました。');
             }
         }
+
 
         // 「マークとメモを全部消す」ボタンのクリックイベント
         document.getElementById('reset-marks').addEventListener('click', resetAllMarksAndMemos);
@@ -1347,6 +1406,7 @@
         });
 
         // ブースの状態を切り替える関数
+        // ブースの状態を切り替える関数を修正
         function toggleBooth(id, state) {
             const circleName = boothInfo[id]?.name;
             if (!circleName) return;
@@ -1357,24 +1417,37 @@
                 updateBoothVisually(boothId, state);
             });
 
+            // データを保存
+            const data = {
+                boothState,
+                boothMemos,
+                boothAmounts
+            };
+            saveData(currentToken, data);
+
             updateStats();
-            localStorage.setItem('boothState', JSON.stringify(boothState));
         }
 
 
 
+
         // ページ読み込み時に既存のマークをチェック
-        function checkExistingMarks() {
-            // localStorageからデータを読み込む（ハッシュ処理で上書きされているはず）
-            const savedState = localStorage.getItem('boothState');
-            if (savedState) {
-                boothState = JSON.parse(savedState);
+        async function checkExistingMarks() {
+            const data = await fetchData(currentToken);
+            if (data) {
+                Object.assign(boothState, data.boothState || {});
+                Object.assign(boothMemos, data.boothMemos || {});
+                Object.assign(boothAmounts, data.boothAmounts || {});
+
+                // ブースの状態を反映
+                Object.entries(boothState).forEach(([id, status]) => {
+                    updateBoothVisually(id, status);
+                });
+
+                // 合計金額を更新
+                document.getElementById('total-amount').textContent = calculateTotalAmount();
+                updateStats();
             }
-            // ブースの状態を反映
-            Object.entries(boothState).forEach(([id, status]) => {
-                updateBoothVisually(id, status);
-            });
-            updateStats();
         }
 
 
@@ -1403,10 +1476,20 @@
         function saveBoothMemoAndAmount(boothId, memo, amount) {
             boothMemos[boothId] = memo;
             boothAmounts[boothId] = amount;
+
+            // データを保存
+            const data = {
+                boothState,
+                boothMemos,
+                boothAmounts
+            };
+            saveData(currentToken, data);
+
+            document.getElementById('total-amount').textContent = calculateTotalAmount();
             localStorage.setItem('boothMemos', JSON.stringify(boothMemos));
             localStorage.setItem('boothAmounts', JSON.stringify(boothAmounts));
-            document.getElementById('total-amount').textContent = calculateTotalAmount();
         }
+
 
         // メモと金額を読み込み
         function loadBoothMemoAndAmount(boothId) {
@@ -1792,75 +1875,93 @@
         // ブース情報モーダル表示
         async function showBoothModal(boothId) {
             const circleName = boothInfo[boothId]?.name;
-            if (!circleName) return;
-
-            const circleData = boothsByCircle[circleName];
             const modal = document.getElementById('booth-modal');
             const idEl = document.getElementById('booth-modal-id');
             const nameLink = document.getElementById('booth-modal-name-link');
             const genreEl = document.getElementById('booth-modal-genre');
 
-            idEl.textContent = circleData.booths.join(', ');
-            nameLink.textContent = circleName;
-            nameLink.href = circleData.url;
-            genreEl.textContent = circleData.genre.join(' / ');
-            genreEl.style.backgroundColor = getGenreColor(circleData.genre[0], circleData.genre.slice(1).join(','));
-            genreEl.style.color = "white";
+            // データがない場合は空文字を表示
+            if (!circleName) {
+                idEl.textContent = boothId;
+                nameLink.textContent = "（データなし）";
+                nameLink.href = "#";
+                genreEl.textContent = "ジャンル: データなし";
+                genreEl.style.backgroundColor = "#808080";
+                genreEl.style.color = "white";
+            } else {
+                // 既存の処理（データがある場合）
+                const circleData = boothsByCircle[circleName];
+                idEl.textContent = circleData.booths.join(', ');
+                nameLink.textContent = circleName;
+                nameLink.href = circleData.url;
+                genreEl.textContent = circleData.genre.join(' / ');
+                genreEl.style.backgroundColor = getGenreColor(circleData.genre[0], circleData.genre.slice(1).join(','));
+                genreEl.style.color = "white";
+            }
+
             modal.style.display = 'flex';
 
-            // ハイライト処理
+            // ハイライト処理（データがない場合はハイライトしない）
             document.querySelectorAll('.booth.highlight').forEach(el => {
                 el.classList.remove('highlight');
             });
-            circleData.booths.forEach(id => {
-                const booth = document.querySelector(`.booth[data-id="${id}"]`);
-                if (booth) booth.classList.add('highlight');
-            });
+
+            if (circleName) {
+                const circleData = boothsByCircle[circleName];
+                circleData.booths.forEach(id => {
+                    const booth = document.querySelector(`.booth[data-id="${id}"]`);
+                    if (booth) booth.classList.add('highlight');
+                });
+            }
 
             // メモと金額の読み込み
             loadBoothMemoAndAmount(boothId);
 
-            document.getElementById('booth-modal-want-to-go').onclick = (e) => {
-                e.stopPropagation();
-                const boothId = document.getElementById('booth-modal-id').textContent.split(',')[0];
-                const memo = document.getElementById('booth-modal-memo').value;
-                const amount = document.getElementById('booth-modal-amount').value;
-                saveBoothMemoAndAmount(boothId, memo, amount); // 追加
-                toggleBooth(boothId, 1);
-                updateStats();
-                document.querySelectorAll('.booth.highlight').forEach(el => {
-                    el.classList.remove('highlight');
-                });
-            };
+            // ボタンのクリックイベント（データがない場合は無効化）
+            const wantToGoBtn = document.getElementById('booth-modal-want-to-go');
+            const visitedBtn = document.getElementById('booth-modal-visited');
+            const unsetBtn = document.getElementById('booth-modal-unset');
 
-            document.getElementById('booth-modal-visited').onclick = (e) => {
-                e.stopPropagation();
-                const boothId = document.getElementById('booth-modal-id').textContent.split(',')[0];
-                const memo = document.getElementById('booth-modal-memo').value;
-                const amount = document.getElementById('booth-modal-amount').value;
-                saveBoothMemoAndAmount(boothId, memo, amount); // 追加
-                toggleBooth(boothId, 2);
-                updateStats();
-                document.querySelectorAll('.booth.highlight').forEach(el => {
-                    el.classList.remove('highlight');
-                });
-            };
+            if (!circleName) {
+                wantToGoBtn.disabled = true;
+                visitedBtn.disabled = true;
+                unsetBtn.disabled = true;
+            } else {
+                wantToGoBtn.disabled = false;
+                visitedBtn.disabled = false;
+                unsetBtn.disabled = false;
 
-            document.getElementById('booth-modal-unset').onclick = (e) => {
-                e.stopPropagation();
-                const boothId = document.getElementById('booth-modal-id').textContent.split(',')[0];
-                const memo = document.getElementById('booth-modal-memo').value;
-                const amount = document.getElementById('booth-modal-amount').value;
-                saveBoothMemoAndAmount(boothId, memo, amount); // 追加
-                toggleBooth(boothId, 0);
-                updateStats();
-                document.querySelectorAll('.booth.highlight').forEach(el => {
-                    el.classList.remove('highlight');
-                });
-            };
+                wantToGoBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const memo = document.getElementById('booth-modal-memo').value;
+                    const amount = document.getElementById('booth-modal-amount').value;
+                    saveBoothMemoAndAmount(boothId, memo, amount);
+                    toggleBooth(boothId, 1);
+                    updateStats();
+                    document.querySelectorAll('.booth.highlight').forEach(el => el.classList.remove('highlight'));
+                };
 
+                visitedBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const memo = document.getElementById('booth-modal-memo').value;
+                    const amount = document.getElementById('booth-modal-amount').value;
+                    saveBoothMemoAndAmount(boothId, memo, amount);
+                    toggleBooth(boothId, 2);
+                    updateStats();
+                    document.querySelectorAll('.booth.highlight').forEach(el => el.classList.remove('highlight'));
+                };
+
+                unsetBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const memo = document.getElementById('booth-modal-memo').value;
+                    const amount = document.getElementById('booth-modal-amount').value;
+                    saveBoothMemoAndAmount(boothId, memo, amount);
+                    toggleBooth(boothId, 0);
+                    updateStats();
+                    document.querySelectorAll('.booth.highlight').forEach(el => el.classList.remove('highlight'));
+                };
+            }
         }
-
 
         // ジャンルカラーを取得
         function getGenreColor(mainGenre, subGenre) {
@@ -1983,9 +2084,17 @@
         });
 
 
+        let currentToken;
 
         // 初期化
         window.onload = async function () {
+            const { token, isReadOnly: readOnly } = await getOrCreateToken();
+            currentToken = token;
+            isReadOnly = readOnly;
+            if (isReadOnly) {
+                document.getElementById('read-only-notice').style.display = 'block';
+            }
+            window.isReadOnly = readOnly;
             // 1. PWAのインストールプロンプトを無効化
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
@@ -2374,20 +2483,26 @@
                         }
                     });
                 });
+                // 空のセルにクリックイベントを追加
+                document.querySelectorAll('.booth.empty').forEach(emptyBooth => {
+                    emptyBooth.addEventListener('click', function (e) {
+                        if (!isPanning && !isZooming) {
+                            // 表示されているテキスト（例: 「あ08」）をIDとして使用
+                            const boothId = this.textContent.trim();
+                            showBoothModal(boothId);
+                        }
+                    });
+                });
+
             });
         }
 
         // 共有ボタンのクリックイベント
-        document.getElementById('share-button').addEventListener('click', function () {
-            const activeTab = document.querySelector('.share-tab.active').dataset.type;
-            const hashPrefix = `#${activeTab}=`;
-            const compressedData = LZString.compressToBase64(JSON.stringify(boothState));
-            const shareUrl = `${window.location.origin}${window.location.pathname}${hashPrefix}${compressedData}`;
-
+        // 共有ボタンのクリックイベントを修正
+        document.getElementById('share-button').addEventListener('click', async function () {
+            const publicTokenUrl = await generateShareToken(currentToken);
             document.getElementById('share-modal').style.display = 'flex';
-            document.getElementById('share-url').value = shareUrl;
-
-
+            document.getElementById('share-url').value = publicTokenUrl;
             updateProgressRate();
         });
 
