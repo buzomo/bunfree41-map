@@ -2277,20 +2277,32 @@
             mapContainers.forEach(mapContainer => {
                 const scrollContainer = mapContainer.querySelector('.scroll-container');
                 // マウスホイールでズーム
+                // initTouchZoomPan 関数内のマウスホイールイベントハンドラを修正
                 mapContainer.addEventListener('wheel', function (e) {
                     e.preventDefault();
                     const rect = mapContainer.getBoundingClientRect();
                     const mouseX = e.clientX - rect.left;
                     const mouseY = e.clientY - rect.top;
-                    const delta = e.deltaY * -0.1;
-                    const newScale = Math.max(0.2, Math.min(3, scale + delta));
-                    const offsetX = (mouseX - scrollContainer.offsetWidth * (1 - scale) / 2) / scale;
-                    const offsetY = (mouseY - scrollContainer.offsetHeight * (1 - scale) / 2) / scale;
+
+                    // 現在のズーム倍率とスクロール位置を取得
+                    const currentScale = scale;
+                    const delta = e.deltaY * -0.01; // ズームの感度を調整
+                    const newScale = Math.max(0.2, Math.min(3, currentScale + delta));
+
+                    // ズームの起点をマウスポインタの位置に設定
+                    const offsetX = (mouseX - scrollContainer.offsetWidth * (1 - currentScale) / 2) / currentScale;
+                    const offsetY = (mouseY - scrollContainer.offsetHeight * (1 - currentScale) / 2) / currentScale;
+
+                    // 新しいスケールを適用
                     scale = newScale;
+                    scrollContainer.style.transformOrigin = `${mouseX}px ${mouseY}px`;
                     scrollContainer.style.transform = `scale(${scale})`;
+
+                    // スクロール位置を調整
                     scrollContainer.style.left = `${-offsetX * scale + mouseX}px`;
                     scrollContainer.style.top = `${-offsetY * scale + mouseY}px`;
                 }, { passive: false });
+
                 // タッチ開始時
                 scrollContainer.addEventListener('touchstart', function (e) {
                     if (e.touches.length === 2) {
@@ -2647,106 +2659,80 @@
          * メイン関数: 指定されたブースを画面中央にズーム表示する（中央揃え強化版）
          */
         function zoomToBooth(boothId, floor) {
-            // 1. フロアの自動判定
+            // フロアの自動判定
             if (!floor) {
                 const firstChar = boothId.charAt(0);
                 const is4F = /^[あ-ん]/.test(firstChar);
                 floor = is4F ? '4F' : '1F';
             }
 
-            // 2. タブと地図の表示切り替え
+            // タブと地図の表示切り替え
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('#map-container-1F, #map-container-4F').forEach(container => {
                 container.classList.remove('active');
             });
-
             const targetTab = document.querySelector(`.tab[data-floor="${floor}"]`);
             const targetContainer = document.getElementById(`map-container-${floor}`);
-
             if (targetTab) targetTab.classList.add('active');
             if (targetContainer) targetContainer.classList.add('active');
 
             const scrollContainer = targetContainer.querySelector('.scroll-container');
             const booth = targetContainer.querySelector(`.booth[data-id="${boothId}"]`);
-
             if (!booth) {
                 console.error(`ブース ${boothId} が見つかりません`);
                 return;
             }
 
-            // 3. 計算と移動の準備
+            // 現在のズーム倍率とスクロール位置を取得
+            const currentScale = scale;
+            const targetScale = 2.0;
 
-            // 重要: 基準点を「左上」に強制固定する。
-            // これがないと、拡大したときに中心から広がり、計算式と合わなくなります。
-            scrollContainer.style.transformOrigin = '0 0';
+            // ブースの位置を取得
+            const boothRect = booth.getBoundingClientRect();
+            const containerRect = targetContainer.getBoundingClientRect();
 
-            // アニメーションを一旦切る（瞬間移動や計算用）
+            // ブースの中心座標（コンテナ内での位置）
+            const boothCenterX = boothRect.left - containerRect.left + boothRect.width / 2;
+            const boothCenterY = boothRect.top - containerRect.top + boothRect.height / 2;
+
+            // 画面の中心座標
+            const viewCenterX = containerRect.width / 2;
+            const viewCenterY = containerRect.height / 2;
+
+            // ズーム後のブースの中心座標が画面の中心に来るようにスクロール位置を計算
+            const newLeft = (viewCenterX - boothCenterX * (targetScale / currentScale));
+            const newTop = (viewCenterY - boothCenterY * (targetScale / currentScale));
+
+            // アニメーションを一旦切る
             scrollContainer.style.transition = 'none';
 
-            // requestAnimationFrameの二重化
-            // ブラウザが「地図が表示された」と認識し、レイアウト計算を完了するのを確実に待ちます
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
+            // ズームとスクロールを適用
+            scrollContainer.style.transformOrigin = '0 0';
+            scrollContainer.style.transform = `scale(${targetScale})`;
+            scrollContainer.style.left = `${newLeft}px`;
+            scrollContainer.style.top = `${newTop}px`;
 
-                    // --- 座標計算 (絶対位置アプローチ) ---
-
-                    // 地図データ内でのブースの「絶対座標（左上からのピクセル数）」を取得
-                    // ※現在のズーム倍率やスクロール位置の影響を受けない純粋な位置です
-                    const boothOffset = getOffsetRelativeTo(booth, scrollContainer);
-
-                    // ブースの中心座標
-                    const boothCenterX = boothOffset.x + (booth.offsetWidth / 2);
-                    const boothCenterY = boothOffset.y + (booth.offsetHeight / 2);
-
-                    // 表示エリア（画面）のサイズ
-                    const viewWidth = targetContainer.clientWidth;
-                    const viewHeight = targetContainer.clientHeight;
-
-                    // 目標ズーム倍率（2.0倍固定）
-                    const targetScale = 2.0;
-
-                    // ■■■ ど真ん中計算の核心 ■■■
-                    // 「画面の中央」に「ブースの中心(の拡大後)」を持ってくるためのオフセット量
-                    // NewLeft = (画面幅 / 2) - (ブースのX座標 * 倍率)
-                    const newLeft = (viewWidth / 2) - (boothCenterX * targetScale);
-                    const newTop = (viewHeight / 2) - (boothCenterY * targetScale);
-
-                    // --- アニメーション適用 ---
-
-                    // 1.0秒かけて、少しバウンドするようにシュッと移動（見失わない程度の速さ）
-                    scrollContainer.style.transition = 'transform 1.0s cubic-bezier(0.2, 0.8, 0.2, 1), left 1.0s cubic-bezier(0.2, 0.8, 0.2, 1), top 1.0s cubic-bezier(0.2, 0.8, 0.2, 1)';
-
-                    // 値を適用
-                    scrollContainer.style.transform = `scale(${targetScale})`;
-                    scrollContainer.style.left = `${newLeft}px`;
-                    scrollContainer.style.top = `${newTop}px`;
-
-                    // --- ハイライト処理 ---
-                    document.querySelectorAll('.booth').forEach(b => {
-                        b.classList.remove('highlight');
-                        b.style.backgroundColor = '';
-                        b.style.boxShadow = '';
-                    });
-
-                    // 色分けOFFのときだけ背景色をつける
-                    if (!isGenreColorEnabled) {
-                        booth.style.backgroundColor = 'yellow';
-                    }
-                    // 強めの発光エフェクト
-                    booth.style.boxShadow = '0 0 25px 10px rgba(255, 215, 0, 0.9)';
-                    booth.classList.add('highlight');
-
-                    // --- グローバル変数の同期 ---
-                    // 次の操作のために、現在の状態を保存
-                    if (typeof scale !== 'undefined') scale = targetScale;
-                    if (typeof scrollLeft !== 'undefined') scrollLeft = newLeft;
-                    if (typeof scrollTop !== 'undefined') scrollTop = newTop;
-
-                    // ドラッグ開始座標もリセット
-                    if (typeof startX !== 'undefined') startX = 0;
-                    if (typeof startY !== 'undefined') startY = 0;
-                });
+            // ハイライト処理
+            document.querySelectorAll('.booth').forEach(b => {
+                b.classList.remove('highlight');
+                b.style.backgroundColor = '';
+                b.style.boxShadow = '';
             });
+            if (!isGenreColorEnabled) {
+                booth.style.backgroundColor = 'yellow';
+            }
+            booth.style.boxShadow = '0 0 25px 10px rgba(255, 215, 0, 0.9)';
+            booth.classList.add('highlight');
+
+            // グローバル変数の同期
+            scale = targetScale;
+            scrollLeft = newLeft;
+            scrollTop = newTop;
+
+            // アニメーションを戻す
+            setTimeout(() => {
+                scrollContainer.style.transition = 'transform 0.5s ease, left 0.5s ease, top 0.5s ease';
+            }, 10);
         }
         // タイトルエリアにクリックイベントを追加
         document.getElementById('timer-area').addEventListener('click', function (e) {
