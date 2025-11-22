@@ -80,12 +80,10 @@ def main():
         booths_by_circle[name]["booths"].append(booth_id)
 
     # 現在の日時とブース数を取得
-    now = datetime.now().strftime("%Y-%m-%d %H-%M")
     booth_count = len(booth_info_all)
 
     # JSONファイルに出力
     with open("booths_by_circle.json", "w", encoding="utf-8") as f:
-        f.write(f"// {now}取得、ブース数: {booth_count}\n")
         json.dump(booths_by_circle, f, ensure_ascii=False, indent=2)
 
     print(f"booths_by_circle.json を出力しました。ブース数: {booth_count}")

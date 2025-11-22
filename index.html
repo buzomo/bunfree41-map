@@ -256,10 +256,15 @@
             /* タッチ操作を明示的に有効化 */
         }
 
+
         .booth.empty {
-            background-color: transparent !important;
-            border: none !important;
+            background-color: #f0f0f0 !important;
+            /* グレーに設定 */
+            border: 1px solid #ccc !important;
+            /* ボーダーを表示 */
             cursor: default;
+            opacity: 0.7;
+            /* 少し透明にしてグレー感を強調 */
         }
 
 
@@ -1440,19 +1445,34 @@
             booth.className = 'booth';
             booth.dataset.id = id;
             booth.dataset.status = boothState[id] || '0';
+
+            // ブース情報が存在する場合
             if (boothInfo[id]) {
                 booth.dataset.mainGenre = boothInfo[id].genre[0] || "その他";
                 booth.dataset.subGenre = boothInfo[id].genre.slice(1).join(',') || "その他";
                 booth.dataset.genre = boothInfo[id].genre.join(',');
-                booth.dataset.name = boothInfo[id].name; // ブース情報がある場合のみ設定
+                booth.dataset.name = boothInfo[id].name;
+
+                // nameまたはgenreが空文字列の場合、.emptyクラスを追加
+                if (boothInfo[id].name === "" || boothInfo[id].genre[0] === "") {
+                    booth.classList.add('empty');
+                }
+            } else {
+                // ブース情報がない場合も.emptyクラスを追加
+                booth.classList.add('empty');
             }
+
+            // テキスト表示の設定
             if (boothState[id] == 1 || boothState[id] == 2) {
                 booth.textContent = id;
             } else {
                 booth.textContent = id.replace(/[A-Za-zあ-ん]/, '');
             }
+
             return booth;
         }
+
+
 
         // ブースの行を生成
         function createBoothRow(container, start, end, direction, letter) {
