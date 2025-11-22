@@ -2508,9 +2508,6 @@
             wantToGoList.innerHTML = '';
             visitedList.innerHTML = '';
 
-            // メモがあるブースを追加でチェック
-            const memoedCircles = new Set();
-
             Object.entries(boothsByCircle).forEach(([circleName, circleData]) => {
                 const is4F = /^[あ-ん]/.test(circleData.booths[0].charAt(0));
                 if ((floor === '1F' && !is4F) || (floor === '4F' && is4F)) {
@@ -2518,14 +2515,26 @@
                     const hasVisited = circleData.booths.some(id => boothState[id] === 2);
                     const hasMemo = circleData.booths.some(id => boothMemos[id]);
 
+                    // 「行きたい」リスト
                     if (hasWantToGo || hasMemo) {
                         const li = document.createElement('li');
                         li.textContent = `${circleName} (${circleData.booths.join(', ')})`;
-                        // メモがある場合は表示
+
+                        // メモの表示
                         const memoText = circleData.booths.map(id => boothMemos[id]).filter(m => m).join(' / ');
                         if (memoText) {
-                            li.innerHTML += `<br><small style="color: #666;">${memoText}</small>`;
+                            li.innerHTML += `<br><small style="color: #666;">メモ: ${memoText}</small>`;
                         }
+
+                        // 支出金額の表示
+                        const amountText = circleData.booths
+                            .map(id => boothAmounts[id] ? `${id}: ${boothAmounts[id]}円` : null)
+                            .filter(text => text)
+                            .join(' / ');
+                        if (amountText) {
+                            li.innerHTML += `<br><small style="color: #ff6b6b;">支出: ${amountText}</small>`;
+                        }
+
                         li.dataset.id = circleData.booths[0];
                         li.addEventListener('click', (e) => {
                             e.stopPropagation();
@@ -2533,13 +2542,27 @@
                         });
                         wantToGoList.appendChild(li);
                     }
+
+                    // 「訪問済」リスト
                     if (hasVisited) {
                         const li = document.createElement('li');
                         li.textContent = `${circleName} (${circleData.booths.join(', ')})`;
+
+                        // メモの表示
                         const memoText = circleData.booths.map(id => boothMemos[id]).filter(m => m).join(' / ');
                         if (memoText) {
-                            li.innerHTML += `<br><small style="color: #666;">${memoText}</small>`;
+                            li.innerHTML += `<br><small style="color: #666;">メモ: ${memoText}</small>`;
                         }
+
+                        // 支出金額の表示
+                        const amountText = circleData.booths
+                            .map(id => boothAmounts[id] ? `${id}: ${boothAmounts[id]}円` : null)
+                            .filter(text => text)
+                            .join(' / ');
+                        if (amountText) {
+                            li.innerHTML += `<br><small style="color: #ff6b6b;">支出: ${amountText}</small>`;
+                        }
+
                         li.dataset.id = circleData.booths[0];
                         li.addEventListener('click', (e) => {
                             e.stopPropagation();
@@ -2550,6 +2573,7 @@
                 }
             });
         }
+
 
 
 
