@@ -933,7 +933,6 @@
                     </div>
                 </div>
             </div>
-            <div id="qrcode" style="margin: 15px auto; width: fit-content;"></div>
             <!-- コピー通知用の要素 -->
             <div id="copy-notification"
                 style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.7); color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; display: none; z-index: 1001;">
@@ -1979,14 +1978,7 @@
                 // QRコードを更新
                 const shareUrl = `${window.location.origin}${window.location.pathname}${newHash}`;
                 document.getElementById('share-url').value = shareUrl;
-                if (typeof QRCode !== 'undefined') {
-                    document.getElementById('qrcode').innerHTML = '';
-                    new QRCode(document.getElementById('qrcode'), {
-                        text: shareUrl,
-                        width: 200,
-                        height: 200,
-                    });
-                }
+
             });
         });
 
@@ -2380,12 +2372,7 @@
                 });
             });
         }
-        // QRコード生成ライブラリの読み込み
-        function loadQRCodeLibrary() {
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
-            document.head.appendChild(script);
-        }
+
         // 共有ボタンのクリックイベント
         document.getElementById('share-button').addEventListener('click', function () {
             const activeTab = document.querySelector('.share-tab.active').dataset.type;
@@ -2396,14 +2383,7 @@
             document.getElementById('share-modal').style.display = 'flex';
             document.getElementById('share-url').value = shareUrl;
 
-            if (typeof QRCode !== 'undefined') {
-                document.getElementById('qrcode').innerHTML = '';
-                new QRCode(document.getElementById('qrcode'), {
-                    text: shareUrl,
-                    width: 200,
-                    height: 200,
-                });
-            }
+
             updateProgressRate();
         });
 
@@ -2417,7 +2397,6 @@
         // ページ読み込み時にURLからデータを復元
         // ページ読み込み時にハッシュを処理
         window.addEventListener('load', function () {
-            loadQRCodeLibrary();
 
             // 読み取り専用モードの表示
             function showReadOnlyNotice() {
@@ -2529,15 +2508,24 @@
             wantToGoList.innerHTML = '';
             visitedList.innerHTML = '';
 
+            // メモがあるブースを追加でチェック
+            const memoedCircles = new Set();
+
             Object.entries(boothsByCircle).forEach(([circleName, circleData]) => {
                 const is4F = /^[あ-ん]/.test(circleData.booths[0].charAt(0));
                 if ((floor === '1F' && !is4F) || (floor === '4F' && is4F)) {
                     const hasWantToGo = circleData.booths.some(id => boothState[id] === 1);
                     const hasVisited = circleData.booths.some(id => boothState[id] === 2);
+                    const hasMemo = circleData.booths.some(id => boothMemos[id]);
 
-                    if (hasWantToGo) {
+                    if (hasWantToGo || hasMemo) {
                         const li = document.createElement('li');
                         li.textContent = `${circleName} (${circleData.booths.join(', ')})`;
+                        // メモがある場合は表示
+                        const memoText = circleData.booths.map(id => boothMemos[id]).filter(m => m).join(' / ');
+                        if (memoText) {
+                            li.innerHTML += `<br><small style="color: #666;">${memoText}</small>`;
+                        }
                         li.dataset.id = circleData.booths[0];
                         li.addEventListener('click', (e) => {
                             e.stopPropagation();
@@ -2548,6 +2536,10 @@
                     if (hasVisited) {
                         const li = document.createElement('li');
                         li.textContent = `${circleName} (${circleData.booths.join(', ')})`;
+                        const memoText = circleData.booths.map(id => boothMemos[id]).filter(m => m).join(' / ');
+                        if (memoText) {
+                            li.innerHTML += `<br><small style="color: #666;">${memoText}</small>`;
+                        }
                         li.dataset.id = circleData.booths[0];
                         li.addEventListener('click', (e) => {
                             e.stopPropagation();
@@ -2558,6 +2550,7 @@
                 }
             });
         }
+
 
 
         function zoomToBooth(boothId, floor) {
