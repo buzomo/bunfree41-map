@@ -1348,18 +1348,12 @@
 
         // ブースの状態を切り替える関数
         function toggleBooth(id, state) {
-            const circleName = boothInfo[id]?.name;
-            if (!circleName) return;
-
-            // サークルに属するすべてのブースの状態を更新
-            boothsByCircle[circleName].booths.forEach(boothId => {
-                boothState[boothId] = state;
-                updateBoothVisually(boothId, state);
-            });
-
+            boothState[id] = state;
+            updateBoothVisually(id, state);
             updateStats();
             localStorage.setItem('boothState', JSON.stringify(boothState));
         }
+
 
 
 
@@ -1790,75 +1784,62 @@
 
 
         // ブース情報モーダル表示
+        // ブース情報モーダル表示
         async function showBoothModal(boothId) {
-            const circleName = boothInfo[boothId]?.name;
-            if (!circleName) return;
-
-            const circleData = boothsByCircle[circleName];
+            const circleName = boothInfo[boothId]?.name || "";
+            const circleData = boothsByCircle[circleName] || { booths: [boothId], url: "", genre: [""] };
             const modal = document.getElementById('booth-modal');
             const idEl = document.getElementById('booth-modal-id');
             const nameLink = document.getElementById('booth-modal-name-link');
             const genreEl = document.getElementById('booth-modal-genre');
-
-            idEl.textContent = circleData.booths.join(', ');
+            idEl.textContent = boothId;
             nameLink.textContent = circleName;
             nameLink.href = circleData.url;
             genreEl.textContent = circleData.genre.join(' / ');
             genreEl.style.backgroundColor = getGenreColor(circleData.genre[0], circleData.genre.slice(1).join(','));
             genreEl.style.color = "white";
             modal.style.display = 'flex';
-
             // ハイライト処理
             document.querySelectorAll('.booth.highlight').forEach(el => {
                 el.classList.remove('highlight');
             });
-            circleData.booths.forEach(id => {
-                const booth = document.querySelector(`.booth[data-id="${id}"]`);
-                if (booth) booth.classList.add('highlight');
-            });
-
+            const booth = document.querySelector(`.booth[data-id="${boothId}"]`);
+            if (booth) booth.classList.add('highlight');
             // メモと金額の読み込み
             loadBoothMemoAndAmount(boothId);
-
             document.getElementById('booth-modal-want-to-go').onclick = (e) => {
                 e.stopPropagation();
-                const boothId = document.getElementById('booth-modal-id').textContent.split(',')[0];
                 const memo = document.getElementById('booth-modal-memo').value;
                 const amount = document.getElementById('booth-modal-amount').value;
-                saveBoothMemoAndAmount(boothId, memo, amount); // 追加
+                saveBoothMemoAndAmount(boothId, memo, amount);
                 toggleBooth(boothId, 1);
                 updateStats();
                 document.querySelectorAll('.booth.highlight').forEach(el => {
                     el.classList.remove('highlight');
                 });
             };
-
             document.getElementById('booth-modal-visited').onclick = (e) => {
                 e.stopPropagation();
-                const boothId = document.getElementById('booth-modal-id').textContent.split(',')[0];
                 const memo = document.getElementById('booth-modal-memo').value;
                 const amount = document.getElementById('booth-modal-amount').value;
-                saveBoothMemoAndAmount(boothId, memo, amount); // 追加
+                saveBoothMemoAndAmount(boothId, memo, amount);
                 toggleBooth(boothId, 2);
                 updateStats();
                 document.querySelectorAll('.booth.highlight').forEach(el => {
                     el.classList.remove('highlight');
                 });
             };
-
             document.getElementById('booth-modal-unset').onclick = (e) => {
                 e.stopPropagation();
-                const boothId = document.getElementById('booth-modal-id').textContent.split(',')[0];
                 const memo = document.getElementById('booth-modal-memo').value;
                 const amount = document.getElementById('booth-modal-amount').value;
-                saveBoothMemoAndAmount(boothId, memo, amount); // 追加
+                saveBoothMemoAndAmount(boothId, memo, amount);
                 toggleBooth(boothId, 0);
                 updateStats();
                 document.querySelectorAll('.booth.highlight').forEach(el => {
                     el.classList.remove('highlight');
                 });
             };
-
         }
 
 
@@ -1900,6 +1881,7 @@
             return mainGenreColors[mainGenre] || "#808080";
         }
         // booths_by_circle.jsonを読み込む
+        // booths_by_circle.jsonを読み込む
         async function loadBoothInfo() {
             try {
                 const response = await fetch('booths_by_circle.json');
@@ -1909,6 +1891,31 @@
                 boothsByCircle = await response.json();
                 // ブースIDからサークル情報を逆引きできるようにする
                 boothInfo = {};
+                // 1FのブースIDを生成して空データを登録
+                const letters1F = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X'];
+                letters1F.forEach(letter => {
+                    for (let i = 1; i <= (letter === 'X' ? 52 : (letter === 'A' ? 76 : 92)); i++) {
+                        const boothId = `${letter}${i.toString().padStart(2, '0')}`;
+                        boothInfo[boothId] = {
+                            name: "",
+                            url: "",
+                            genre: [""]
+                        };
+                    }
+                });
+                // 4FのブースIDを生成して空データを登録
+                const letters4F = ['あ', 'い', 'う', 'え', 'お', 'か', 'き', 'く', 'け', 'こ', 'さ', 'し', 'す', 'せ', 'そ', 'た', 'ち', 'つ', 'て', 'と', 'な', 'に', 'ぬ', 'ね'];
+                letters4F.forEach(letter => {
+                    for (let i = 1; i <= (letter === 'ね' ? 44 : 92); i++) {
+                        const boothId = `${letter}${i.toString().padStart(2, '0')}`;
+                        boothInfo[boothId] = {
+                            name: "",
+                            url: "",
+                            genre: [""]
+                        };
+                    }
+                });
+                // 実際のデータで上書き
                 Object.entries(boothsByCircle).forEach(([circleName, circleData]) => {
                     circleData.booths.forEach(boothId => {
                         boothInfo[boothId] = {
